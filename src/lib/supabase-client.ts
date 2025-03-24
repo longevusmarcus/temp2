@@ -8,6 +8,16 @@ declare global {
     | undefined;
 }
 
+// Function to validate URL format
+const isValidUrl = (urlString: string): boolean => {
+  try {
+    new URL(urlString);
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
 // Function to get the Supabase client instance
 export const getSupabase = () => {
   // Check global instance first
@@ -24,12 +34,16 @@ export const getSupabase = () => {
     hasSupabaseKey: !!supabaseKey,
     urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 10) + "..." : "undefined",
     keyPrefix: supabaseKey ? supabaseKey.substring(0, 5) + "..." : "undefined",
+    isValidUrl: supabaseUrl ? isValidUrl(supabaseUrl) : false,
   });
 
+  // Check if URL is valid
+  const urlIsValid = supabaseUrl && isValidUrl(supabaseUrl);
+
   // For debugging purposes
-  if (!supabaseUrl || !supabaseKey) {
+  if (!urlIsValid || !supabaseKey) {
     console.warn(
-      "Supabase credentials missing. Database operations will fail.",
+      `Supabase credentials issue: ${!urlIsValid ? "Invalid URL" : "Missing key"}. Database operations will fail.`,
     );
     // Return a dummy client that won't throw errors immediately
     // This allows the app to at least render without crashing
