@@ -1,0 +1,19 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TempoDevtools = void 0;
+const channelMessaging_1 = require("./channelMessaging");
+exports.TempoDevtools = {
+    state: {
+        dependencies: {
+            LzString: null,
+        },
+        env: {},
+    },
+    // Initialization method
+    init: function (customEnv = {}) {
+        if (customEnv) {
+            this.state.env = Object.assign({}, customEnv);
+        }
+        (0, channelMessaging_1.initChannelMessaging)();
+    },
+};

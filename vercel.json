@@ -1,0 +1,12 @@
+{
+  "buildCommand": "npm run build-no-errors",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "env": {
+    "VITE_TEMPO": "false",
+    "VITE_POLAR_ACCESS_TOKEN": "${VITE_POLAR_ACCESS_TOKEN}",
+    "VITE_SUPABASE_URL": "${VITE_SUPABASE_URL}",
+    "VITE_SUPABASE_ANON_KEY": "${VITE_SUPABASE_ANON_KEY}"
+  },
+  "installCommand": "npm install"
+}
