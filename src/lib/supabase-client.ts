@@ -12,6 +12,14 @@ export const getSupabase = () => {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
+  // Log environment variable status for debugging
+  console.log("Environment variables check:", {
+    hasSupabaseUrl: !!supabaseUrl,
+    hasSupabaseKey: !!supabaseKey,
+    urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 10) + "..." : "undefined",
+    keyPrefix: supabaseKey ? supabaseKey.substring(0, 5) + "..." : "undefined",
+  });
+
   // For debugging purposes
   if (!supabaseUrl || !supabaseKey) {
     console.warn(
