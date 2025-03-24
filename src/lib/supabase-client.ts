@@ -21,15 +21,16 @@ const isValidUrl = (urlString: string): boolean => {
 // Function to get the Supabase client instance
 export const getSupabase = () => {
   // Check global instance first
-  if (globalThis.supabaseClientInstance)
+  if (globalThis.supabaseClientInstance) {
     return globalThis.supabaseClientInstance;
+  }
 
   // Use environment variables for the Supabase URL and anon key
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
   // Log environment variable status for debugging
-  console.log("Environment variables check:", {
+  console.log("Initializing Supabase singleton client:", {
     hasSupabaseUrl: !!supabaseUrl,
     hasSupabaseKey: !!supabaseKey,
     urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 10) + "..." : "undefined",
@@ -65,6 +66,7 @@ export const getSupabase = () => {
 
   // Create a single instance of the Supabase client to be used throughout the app
   try {
+    console.log("Creating new Supabase client instance (singleton)...");
     globalThis.supabaseClientInstance = createClient<Database>(
       supabaseUrl,
       supabaseKey,
@@ -97,5 +99,7 @@ export const getSupabase = () => {
   return globalThis.supabaseClientInstance;
 };
 
-// For backward compatibility with existing code
+// Create a single instance to be used throughout the application
+// This ensures we only have one GoTrueClient instance
 export const supabase = getSupabase();
+console.log("Supabase singleton client initialized and exported");

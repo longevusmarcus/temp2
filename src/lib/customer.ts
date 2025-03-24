@@ -1,15 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
-import { Database } from "@/types/supabase";
+import { supabase } from "./supabase-client";
 
-// Use the provided project URL or fall back to env vars
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-
-// Create the client with the required values
-const supabase =
-  supabaseUrl && supabaseAnonKey
-    ? createClient<Database>(supabaseUrl, supabaseAnonKey)
-    : null;
+// Log that we're using the shared client
+console.log("Customer module using shared Supabase client instance");
 
 /**
  * Get customer by email

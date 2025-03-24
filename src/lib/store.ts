@@ -1,38 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { PixelBlock, PurchaseData, BLOCK_SIZES } from "./types";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "./supabase-client";
 
-// Use the provided project URL or fall back to env vars
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-
-// Log Supabase configuration (without exposing full keys)
-const maskedKey = supabaseAnonKey
-  ? `${supabaseAnonKey.substring(0, 5)}...${supabaseAnonKey.substring(supabaseAnonKey.length - 5)}`
-  : "undefined";
-console.log("Supabase Configuration:", {
-  url: supabaseUrl || "undefined",
-  anonKey: maskedKey,
-  hasUrl: !!supabaseUrl,
-  hasKey: !!supabaseAnonKey,
-});
-
-// Only create the client if we have the required values
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error(
-    "Supabase URL or Anon Key is missing. Database operations will fail.",
-  );
-}
-
-// Create Supabase client with error handling
-const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "", {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+// Log Supabase client status
+console.log("Store using shared Supabase client instance");
 
 // Helper function for random color generation
 function getRandomColor(): string {
