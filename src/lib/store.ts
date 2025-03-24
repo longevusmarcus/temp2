@@ -253,6 +253,7 @@ export const useStore = create(
               width: totalWidth,
               height: totalHeight,
               color: newBlock.color, // Use the same color as the local block
+              category: purchaseData.projectDetails.category || "", // Add category field
             })
             .select();
 
