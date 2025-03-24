@@ -6,6 +6,12 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  # Important: Ensure Vite processes these environment variables during build
+  VITE_SUPABASE_URL = "${VITE_SUPABASE_URL}"
+  VITE_SUPABASE_ANON_KEY = "${VITE_SUPABASE_ANON_KEY}"
+  VITE_SUPABASE_PROJECT_ID = "${SUPABASE_PROJECT_ID}"
+  VITE_SUPABASE_SERVICE_KEY = "${SUPABASE_SERVICE_KEY}"
+  VITE_POLAR_ACCESS_TOKEN = "${VITE_POLAR_ACCESS_TOKEN}"
 
 # Handle SPA routing
 [[redirects]]
