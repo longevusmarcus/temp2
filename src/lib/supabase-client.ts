@@ -21,9 +21,6 @@ const isValidUrl = (urlString: string): boolean => {
 // Function to get the Supabase client instance
 export const getSupabase = () => {
   // Check global instance first
-  if (globalThis.supabaseClientInstance) {
-    return globalThis.supabaseClientInstance;
-  }
 
   // Use environment variables for the Supabase URL and anon key
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
