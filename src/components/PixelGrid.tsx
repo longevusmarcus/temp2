@@ -140,7 +140,15 @@ function PixelGrid({ blocks, gridSize = 1000000 }: PixelGridProps) {
                   top: `${block.y}px`,
                   width: `${block.width}px`,
                   height: `${block.height}px`,
-                  backgroundColor: block.color || "#5588ff",
+                  backgroundColor: block.thumbnailUrl
+                    ? "transparent"
+                    : block.color || "#5588ff",
+                  backgroundImage: block.thumbnailUrl
+                    ? `url(${block.thumbnailUrl})`
+                    : "none",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
                 }}
                 onMouseEnter={() => setHoveredBlock(block)}
                 onMouseLeave={() => setHoveredBlock(null)}
@@ -150,21 +158,15 @@ function PixelGrid({ blocks, gridSize = 1000000 }: PixelGridProps) {
                   }
                 }}
               >
-                {block.width >= 20 && block.height >= 20 && (
-                  <div className="absolute inset-0 flex items-center justify-center p-1 overflow-hidden">
-                    {block.thumbnailUrl ? (
-                      <img
-                        src={block.thumbnailUrl}
-                        alt={block.projectName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
+                {!block.thumbnailUrl &&
+                  block.width >= 20 &&
+                  block.height >= 20 && (
+                    <div className="absolute inset-0 flex items-center justify-center p-1 overflow-hidden">
                       <div className="text-xs text-white font-bold truncate text-center">
                         {block.projectName}
                       </div>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
               </div>
             </ProjectHoverCard>
           ))}
