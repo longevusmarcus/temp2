@@ -53,6 +53,7 @@ export async function createPaymentSession(purchaseData: any) {
     // Create checkout session with Polar
     const checkout = await polar.checkouts.create({
       successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_ID}&status=success`,
+      cancelUrl: `${window.location.origin}/payment-cancel`,
       allowDiscountCodes: true,
       customerBillingAddress: {
         country: projectDetails.country || "US",
@@ -89,74 +90,85 @@ export async function createPaymentSession(purchaseData: any) {
 // Verify payment status after checkout completion
 export async function verifyPayment(sessionId: string) {
   try {
+    console.log("🔍 Verifying payment for checkout:", sessionId);
+
     // Get checkout data from Supabase
     const { data: checkoutData, error: checkoutError } = await supabase
       .from("polar_checkouts")
       .select("*")
-      .eq("id", sessionId)
+      .eq("checkout_id", sessionId)
       .single();
 
     if (checkoutError) {
       console.error("Error retrieving checkout data:", checkoutError);
-      throw new Error("Failed to retrieve checkout data");
+      return {
+        success: false,
+        error: "Failed to retrieve checkout data",
+      };
     }
 
     if (!checkoutData) {
-      throw new Error("Checkout session not found");
+      return {
+        success: false,
+        error: "Checkout session not found",
+      };
     }
 
-    // If we have a Polar session ID, verify with Polar API
-    if (checkoutData.checkout_id) {
-      try {
-        const checkoutStatus = await polar.checkouts.get(
-          checkoutData.checkout_id,
-        );
+    // Verify with Polar API
+    try {
+      const checkoutStatus = await polar.checkouts.get(sessionId);
 
-        // Update checkout status in Supabase based on Polar response
-        // Fix the comparison by using string comparison instead of enum
-        const newStatus =
-          checkoutStatus.status.toString() === "complete"
-            ? "completed"
-            : checkoutData.status;
+      // Update checkout status in Supabase based on Polar response
+      const newStatus =
+        checkoutStatus.status === "completed" ||
+        checkoutStatus.status.toString() === "complete"
+          ? "completed"
+          : checkoutData.status;
 
-        // Update the checkout record with the latest status
-        const { error: updateError } = await supabase
-          .from("polar_checkouts")
-          .update({ status: newStatus })
-          .eq("id", sessionId);
+      console.log("✅ Checkout status:", newStatus);
 
-        if (updateError) {
-          console.error("Error updating checkout status:", updateError);
-        }
+      // Update the checkout record with the latest status
+      const { error: updateError } = await supabase
+        .from("polar_checkouts")
+        .update({ status: newStatus })
+        .eq("id", checkoutData.id);
 
-        return {
-          success: newStatus === "completed",
-          status: newStatus,
-          checkoutData: {
-            ...checkoutData,
-            status: newStatus,
-          },
-        };
-      } catch (polarError) {
-        console.error("Error verifying with Polar API:", polarError);
-        // Return the current data we have if Polar API fails
-        return {
-          success: checkoutData.status === "completed",
-          status: checkoutData.status,
-          checkoutData,
-          error: "Failed to verify with payment provider",
-        };
+      if (updateError) {
+        console.error("Error updating checkout status:", updateError);
       }
-    }
 
-    // If no Polar session ID, just return the current status
-    return {
-      success: checkoutData.status === "completed",
-      status: checkoutData.status,
-      checkoutData,
-    };
+      // If payment is completed, update the project status
+      if (newStatus === "completed" && checkoutData.metadata?.project_details) {
+        // Here you could add code to update the project status or allocate the purchased blocks
+        console.log(
+          "🎉 Payment completed, processing purchase for project:",
+          checkoutData.metadata.project_details.name || "Unknown",
+        );
+      }
+
+      return {
+        success: newStatus === "completed",
+        status: newStatus,
+        checkoutData: {
+          ...checkoutData,
+          status: newStatus,
+        },
+      };
+    } catch (polarError) {
+      console.error("Error verifying with Polar API:", polarError);
+      // Return the current data we have if Polar API fails
+      return {
+        success: checkoutData.status === "completed",
+        status: checkoutData.status,
+        checkoutData,
+        error: "Failed to verify with payment provider",
+      };
+    }
   } catch (error) {
     console.error("Payment verification error:", error);
-    throw error;
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }

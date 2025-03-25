@@ -21,9 +21,13 @@ const PaymentSuccessPage = () => {
     if (sessionId && status === "success") {
       const checkPayment = async () => {
         try {
-          const isVerified = await verifyPayment(sessionId);
-          if (!isVerified) {
+          const result = await verifyPayment(sessionId);
+          if (!result.success) {
             // If payment verification fails, redirect to home
+            console.error(
+              "Payment verification failed:",
+              result.error || "Unknown error",
+            );
             navigate("/");
           }
         } catch (error) {
