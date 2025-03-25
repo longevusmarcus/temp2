@@ -36,6 +36,7 @@ export const getSupabase = () => {
     urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 10) + "..." : "undefined",
     keyPrefix: supabaseKey ? supabaseKey.substring(0, 5) + "..." : "undefined",
     isValidUrl: supabaseUrl ? isValidUrl(supabaseUrl) : false,
+    fullUrl: supabaseUrl || "not set",
   });
 
   // Check if URL is valid

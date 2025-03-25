@@ -20,6 +20,9 @@ const isValidUrl = (urlString: string): boolean => {
 };
 
 function App() {
+  // Fix for useRoutes - must be called at the component level
+  const tempoRoutes =
+    import.meta.env.VITE_TEMPO === "true" ? useRoutes(routes) : null;
   const [envError, setEnvError] = useState(false);
   const [errorType, setErrorType] = useState<"missing" | "invalid" | null>(
     null,
@@ -39,6 +42,8 @@ function App() {
       hasSupabaseKey: !!supabaseKey,
       urlIsValid,
       buildTime: new Date().toISOString(),
+      fullUrl: supabaseUrl || "not set",
+      fullKey: supabaseKey ? "[REDACTED]" : "not set",
     });
 
     // Set error state if environment variables are missing or invalid
@@ -70,7 +75,7 @@ function App() {
             <Route path="/tempobook/*" element={<div />} />
           )}
         </Routes>
-        {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
+        {/* Fix for useRoutes - must be outside of JSX */}
       </div>
     </Suspense>
   );
