@@ -69,7 +69,8 @@ export async function deployEdgeFunction(
         },
         body: JSON.stringify({
           name: functionName,
-          verify_jwt: false,
+          verify_jwt: false, // Explicitly set to false with --no-verify-jwt flag
+
           import_map: {},
           entrypoint_path: "index.ts",
           content: btoa(functionCode), // Base64 encode the function code

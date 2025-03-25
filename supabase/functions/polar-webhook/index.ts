@@ -10,8 +10,12 @@ const corsHeaders = {
 };
 
 // Get environment variables
-const supabaseUrl =
+// Remove any trailing slashes from the URL
+const rawSupabaseUrl =
   Deno.env.get("SUPABASE_URL") || Deno.env.get("VITE_SUPABASE_URL") || "";
+const supabaseUrl = rawSupabaseUrl.endsWith("/")
+  ? rawSupabaseUrl.slice(0, -1)
+  : rawSupabaseUrl;
 const supabaseServiceKey =
   Deno.env.get("SUPABASE_SERVICE_KEY") ||
   Deno.env.get("VITE_SUPABASE_SERVICE_KEY") ||
