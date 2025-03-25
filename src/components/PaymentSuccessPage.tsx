@@ -8,10 +8,17 @@ const PaymentSuccessPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const sessionId = searchParams.get("session_id");
+  const status = searchParams.get("status");
 
   useEffect(() => {
+    // Handle cancellation if user navigated back or closed the payment page
+    if (!status && sessionId) {
+      navigate("/payment-cancel");
+      return;
+    }
+
     // Verify the payment was successful
-    if (sessionId) {
+    if (sessionId && status === "success") {
       const checkPayment = async () => {
         try {
           const isVerified = await verifyPayment(sessionId);
@@ -27,7 +34,7 @@ const PaymentSuccessPage = () => {
 
       checkPayment();
     }
-  }, [sessionId, navigate]);
+  }, [sessionId, status, navigate]);
 
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
