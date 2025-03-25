@@ -9,6 +9,9 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
+// Log the request URL for debugging
+console.log("Request URL:", Deno.env.get("SUPABASE_URL"));
+
 // Get environment variables
 // Remove any trailing slashes from the URL
 const rawSupabaseUrl =
@@ -20,7 +23,8 @@ const supabaseServiceKey =
   Deno.env.get("SUPABASE_SERVICE_KEY") ||
   Deno.env.get("VITE_SUPABASE_SERVICE_KEY") ||
   "";
-const WEBHOOK_SECRET = "d07e6a6640f441949ad0fb00d6e43e8e";
+const WEBHOOK_SECRET =
+  Deno.env.get("WEBHOOK_SECRET") || "d07e6a6640f441949ad0fb00d6e43e8e";
 
 // Create Supabase client
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
