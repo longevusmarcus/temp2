@@ -14,8 +14,18 @@ console.log("Request URL:", Deno.env.get("SUPABASE_URL"));
 
 // Get environment variables
 // Get Supabase URL and service key directly from environment
-const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+// Try multiple possible environment variable names
+const supabaseUrl =
+  Deno.env.get("SUPABASE_URL") ||
+  Deno.env.get("PROJECT_URL") ||
+  Deno.env.get("VITE_SUPABASE_URL") ||
+  Deno.env.get("SUPABASE_PROJECT_URL");
+
+const supabaseServiceKey =
+  Deno.env.get("SUPABASE_SERVICE_KEY") ||
+  Deno.env.get("SERVICE_ROLE_KEY") ||
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+  Deno.env.get("VITE_SUPABASE_SERVICE_KEY");
 
 // Check if environment variables are loaded properly
 if (!supabaseUrl || !supabaseServiceKey) {
@@ -24,6 +34,20 @@ if (!supabaseUrl || !supabaseServiceKey) {
     supabaseServiceKeySet: !!supabaseServiceKey,
     availableEnvVars: Object.keys(Deno.env.toObject()),
   });
+
+  // Log all environment variables for debugging (without exposing values)
+  console.log(
+    "Available environment variables:",
+    Object.keys(Deno.env.toObject()).map((key) => {
+      return {
+        name: key,
+        hasValue: !!Deno.env.get(key),
+        valuePreview: Deno.env.get(key)
+          ? `${Deno.env.get(key)?.substring(0, 3)}...`
+          : "<empty>",
+      };
+    }),
+  );
 }
 
 // Normalize URL by removing trailing slash if present
@@ -33,10 +57,14 @@ const normalizedSupabaseUrl =
     : supabaseUrl || "";
 
 // Fallback to other env vars if primary ones are not available
-const finalSupabaseUrl =
-  normalizedSupabaseUrl || Deno.env.get("VITE_SUPABASE_URL") || "";
+const finalSupabaseUrl = normalizedSupabaseUrl || "";
+
+// For the key, try service key first, then anon key as last resort
 const finalSupabaseKey =
-  supabaseServiceKey || Deno.env.get("VITE_SUPABASE_SERVICE_KEY") || "";
+  supabaseServiceKey ||
+  Deno.env.get("VITE_SUPABASE_ANON_KEY") ||
+  Deno.env.get("SUPABASE_ANON_KEY") ||
+  "";
 
 const WEBHOOK_SECRET =
   Deno.env.get("WEBHOOK_SECRET") || "d07e6a6640f441949ad0fb00d6e43e8e";
@@ -53,7 +81,11 @@ console.log("Polar webhook Supabase configuration:", {
     : "NOT SET",
   finalServiceKey: finalSupabaseKey ? "SET (masked)" : "NOT SET",
   envVars: Object.keys(Deno.env.toObject()).filter(
-    (key) => key.includes("SUPABASE") || key.includes("VITE_SUPABASE"),
+    (key) =>
+      key.includes("SUPABASE") ||
+      key.includes("VITE_SUPABASE") ||
+      key === "PROJECT_URL" ||
+      key === "SERVICE_ROLE_KEY",
   ),
 });
 
