@@ -53,7 +53,7 @@ export async function createPaymentSession(purchaseData: any) {
     // Create checkout session with Polar
     const checkout = await polar.checkouts.create({
       successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_ID}&status=success`,
-      cancelUrl: `${window.location.origin}/payment-cancel`,
+      // cancelUrl is not supported in the Polar SDK type
       allowDiscountCodes: true,
       customerBillingAddress: {
         country: projectDetails.country || "US",
@@ -116,12 +116,13 @@ export async function verifyPayment(sessionId: string) {
 
     // Verify with Polar API
     try {
-      const checkoutStatus = await polar.checkouts.get(sessionId);
+      // Pass the sessionId as an object with id property to match CheckoutsGetRequest type
+      const checkoutStatus = await polar.checkouts.get({ id: sessionId });
 
       // Update checkout status in Supabase based on Polar response
       const newStatus =
-        checkoutStatus.status === "completed" ||
-        checkoutStatus.status.toString() === "complete"
+        checkoutStatus.status.toString() === "complete" ||
+        checkoutStatus.status.toString() === "completed"
           ? "completed"
           : checkoutData.status;
 
