@@ -19,10 +19,10 @@ import { BLOCK_SIZES } from "@/lib/types";
 // Temporary implementations until payment.ts is fixed
 const calculateTotalCost = (blockSize: string, quantity: number) => {
   const BLOCK_SIZES_PRICES: Record<string, number> = {
-    small: 5,
-    medium: 10,
-    large: 20,
-    xlarge: 40,
+    small: 10,
+    medium: 35,
+    large: 200,
+    xlarge: 400,
   };
   const unitPrice = BLOCK_SIZES_PRICES[blockSize] || 10; // Default to medium price if not found
   return unitPrice * quantity;
@@ -91,27 +91,21 @@ const PaymentForm = ({
         polarToken ? "[Token available]" : "[Missing token]",
       );
 
-      // Temporary implementation of createPaymentSession
-      const createPaymentSession = async (data: any) => {
-        try {
-          console.log("Creating payment session with Polar.sh", data);
+      // Import the payment module to use the real implementation
+      const { createPaymentSession } = await import("@/lib/payment");
 
-          // Mock response for development purposes
-          // In production, this would make an actual API call to Polar.sh
-          const mockSessionId = `session_${Math.random().toString(36).substring(2, 15)}`;
-          const mockUrl = `https://app.polar.sh/checkout/${mockSessionId}`;
+      // Call the real createPaymentSession function with the correct parameters
+      const { sessionId, url, success, error } = await createPaymentSession(
+        values.email,
+        blockSize,
+        quantity,
+        locations.length > 0 ? locations[0] : null,
+        projectDetails,
+      );
 
-          return {
-            sessionId: mockSessionId,
-            url: mockUrl,
-          };
-        } catch (error) {
-          console.error("Error creating payment session:", error);
-          throw error;
-        }
-      };
-
-      const { sessionId, url } = await createPaymentSession(purchaseData);
+      if (!success) {
+        throw new Error(error || "Failed to create payment session");
+      }
 
       // Log the session details
       console.log(`Payment session created: ${sessionId}`);
