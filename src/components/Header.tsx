@@ -20,7 +20,7 @@ const Header = ({
   };
 
   return (
-    <header className="w-full h-20 bg-gray-900 border-b border-gray-800 text-white flex items-center justify-between px-4 md:px-8 fixed top-0 left-0 z-50">
+    <header className="w-full h-20 border-b border-gray-800 text-white flex items-center justify-between px-4 md:px-8 z-50">
       {/* Logo and Title */}
       <div className="flex items-center">
         <a
@@ -89,7 +89,7 @@ const Header = ({
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="absolute top-20 left-0 right-0 bg-gray-900 border-b border-gray-800 p-4 md:hidden">
+        <div className="absolute top-20 left-0 right-0 border-b border-gray-800 p-4 md:hidden">
           <nav className="flex flex-col space-y-4">
             <a
               href="/"
