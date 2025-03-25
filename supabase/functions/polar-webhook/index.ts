@@ -13,26 +13,45 @@ const corsHeaders = {
 console.log("Request URL:", Deno.env.get("SUPABASE_URL"));
 
 // Get environment variables
-// Remove any trailing slashes from the URL
-const rawSupabaseUrl =
-  Deno.env.get("SUPABASE_URL") || Deno.env.get("VITE_SUPABASE_URL") || "";
-const supabaseUrl = rawSupabaseUrl.endsWith("/")
-  ? rawSupabaseUrl.slice(0, -1)
-  : rawSupabaseUrl;
-const supabaseServiceKey =
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
-  Deno.env.get("VITE_SUPABASE_SERVICE_KEY") ||
-  "";
+// Get Supabase URL and service key directly from environment
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+// Check if environment variables are loaded properly
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error("Missing Supabase credentials:", {
+    supabaseUrlSet: !!supabaseUrl,
+    supabaseServiceKeySet: !!supabaseServiceKey,
+    availableEnvVars: Object.keys(Deno.env.toObject()),
+  });
+}
+
+// Normalize URL by removing trailing slash if present
+const normalizedSupabaseUrl =
+  supabaseUrl && supabaseUrl.endsWith("/")
+    ? supabaseUrl.slice(0, -1)
+    : supabaseUrl || "";
+
+// Fallback to other env vars if primary ones are not available
+const finalSupabaseUrl =
+  normalizedSupabaseUrl || Deno.env.get("VITE_SUPABASE_URL") || "";
+const finalSupabaseKey =
+  supabaseServiceKey || Deno.env.get("VITE_SUPABASE_SERVICE_KEY") || "";
+
 const WEBHOOK_SECRET =
   Deno.env.get("WEBHOOK_SECRET") || "d07e6a6640f441949ad0fb00d6e43e8e";
 
 // Create Supabase client
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(finalSupabaseUrl, finalSupabaseKey);
 
 // Log Supabase configuration (without exposing full keys)
 console.log("Polar webhook Supabase configuration:", {
-  url: supabaseUrl ? `${supabaseUrl.substring(0, 10)}...` : "NOT SET",
-  serviceKey: supabaseServiceKey ? "SET (masked)" : "NOT SET",
+  primaryUrlSet: !!supabaseUrl,
+  primaryServiceKeySet: !!supabaseServiceKey,
+  finalUrl: finalSupabaseUrl
+    ? `${finalSupabaseUrl.substring(0, 10)}...`
+    : "NOT SET",
+  finalServiceKey: finalSupabaseKey ? "SET (masked)" : "NOT SET",
   envVars: Object.keys(Deno.env.toObject()).filter(
     (key) => key.includes("SUPABASE") || key.includes("VITE_SUPABASE"),
   ),
@@ -86,10 +105,48 @@ Deno.serve(async (req) => {
 
   // Handle GET request for testing connectivity
   if (req.method === "GET") {
+    // Check if environment variables are loaded properly
+    if (!finalSupabaseUrl || !finalSupabaseKey) {
+      console.error("Missing Supabase credentials on GET request:", {
+        primaryUrlSet: !!supabaseUrl,
+        primaryServiceKeySet: !!supabaseServiceKey,
+        finalUrlSet: !!finalSupabaseUrl,
+        finalServiceKeySet: !!finalSupabaseKey,
+      });
+
+      return new Response(
+        JSON.stringify({
+          status: "error",
+          message: "Missing Supabase credentials",
+          details: {
+            primaryUrlSet: !!supabaseUrl,
+            primaryServiceKeySet: !!supabaseServiceKey,
+            finalUrlSet: !!finalSupabaseUrl,
+            finalServiceKeySet: !!finalSupabaseKey,
+            availableEnvVars: Object.keys(Deno.env.toObject()).filter(
+              (key) =>
+                key.includes("SUPABASE") || key.includes("VITE_SUPABASE"),
+            ),
+          },
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        },
+      );
+    }
+
     return new Response(
       JSON.stringify({
         status: "ok",
         message: "Polar webhook is running",
+        envStatus: {
+          primaryUrlSet: !!supabaseUrl,
+          primaryServiceKeySet: !!supabaseServiceKey,
+          finalUrlSet: !!finalSupabaseUrl,
+          finalServiceKeySet: !!finalSupabaseKey,
+        },
         timestamp: new Date().toISOString(),
       }),
       {
