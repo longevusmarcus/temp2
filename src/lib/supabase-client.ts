@@ -23,7 +23,7 @@ export const getSupabase = () => {
   // Check global instance first
 
   // Use environment variables for the Supabase URL and anon key
-  const supabaseUrl = "https://mbqihswchccmvqmjlpwq.supabase.co";
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
   // Log environment variable status for debugging

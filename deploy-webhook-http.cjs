@@ -1,12 +1,7 @@
 // Script to deploy Supabase Edge Function using HTTP requests
-import fs from "fs";
-import path from "path";
-import https from "https";
-import { fileURLToPath } from "url";
-
-// Get current directory with ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require("fs");
+const path = require("path");
+const https = require("https");
 
 // Get environment variables with more detailed logging
 const SUPABASE_PROJECT_ID =
