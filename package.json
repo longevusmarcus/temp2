@@ -75,5 +75,6 @@
     "tempo-devtools": "^2.0.95",
     "typescript": "^5.2.2",
     "vite": "^5.0.0"
-  }
+  },
+  "homepage": "."
 }
