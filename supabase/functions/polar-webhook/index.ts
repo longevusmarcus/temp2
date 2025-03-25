@@ -20,7 +20,7 @@ const supabaseUrl = rawSupabaseUrl.endsWith("/")
   ? rawSupabaseUrl.slice(0, -1)
   : rawSupabaseUrl;
 const supabaseServiceKey =
-  Deno.env.get("SUPABASE_SERVICE_KEY") ||
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
   Deno.env.get("VITE_SUPABASE_SERVICE_KEY") ||
   "";
 const WEBHOOK_SECRET =
