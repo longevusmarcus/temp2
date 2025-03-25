@@ -160,13 +160,11 @@ export const useStore = create(
             ...state,
             isLoading: false,
           }));
-          console.error("Failed to update stats, will retry in 5 seconds");
+          console.error(
+            "Failed to update stats. Please refresh the page to try again.",
+          );
 
-          // Try to fetch the data again after a short delay
-          setTimeout(() => {
-            console.log("Retrying to fetch stats...");
-            get().fetchStats();
-          }, 5000);
+          // Removed the automatic retry mechanism to prevent continuous fetching
         }
       },
 

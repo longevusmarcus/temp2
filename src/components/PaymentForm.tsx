@@ -95,7 +95,7 @@ const PaymentForm = ({
       const { createPaymentSession } = await import("@/lib/payment");
 
       // Call the real createPaymentSession function with the correct parameters
-      const { sessionId, url, success, error } = await createPaymentSession(
+      const result = await createPaymentSession(
         values.email,
         blockSize,
         quantity,
@@ -103,9 +103,13 @@ const PaymentForm = ({
         projectDetails,
       );
 
-      if (!success) {
-        throw new Error(error || "Failed to create payment session");
+      console.log("Payment session result:", result);
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create payment session");
       }
+
+      const { sessionId, url } = result;
 
       // Log the session details
       console.log(`Payment session created: ${sessionId}`);
