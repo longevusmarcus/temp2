@@ -55,6 +55,7 @@ const PaymentForm = ({
   });
 
   const handleSubmit = async (values: PaymentFormValues) => {
+    console.log("Payment form submitted with values:", values);
     setIsProcessing(true);
     setPaymentError(null);
 

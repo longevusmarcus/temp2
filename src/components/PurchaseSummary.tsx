@@ -194,7 +194,7 @@ const PurchaseSummary = ({
           className="w-1/2 bg-purple-600 hover:bg-purple-700 text-white"
           onClick={onConfirm}
         >
-          Confirm Purchase
+          Proceed to Payment
         </Button>
       </CardFooter>
     </Card>

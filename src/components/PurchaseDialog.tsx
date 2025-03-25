@@ -304,13 +304,9 @@ export function PurchaseDialog({
                 url: projectDetails.website,
                 category: projectDetails.category,
               }}
+              onConfirm={handleNext}
+              onBack={handleBack}
             />
-            <div className="flex justify-between mt-4">
-              <Button variant="outline" onClick={handleBack}>
-                Back
-              </Button>
-              <Button onClick={handlePurchase}>Confirm Purchase</Button>
-            </div>
           </div>
         )}
 
