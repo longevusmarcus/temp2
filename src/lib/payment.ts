@@ -54,7 +54,7 @@ export async function createPaymentSession(purchaseData: any) {
     const checkout = await polar.checkouts.create({
       successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_ID}&status=success`,
       // Use the correct property name according to Polar SDK
-      line_items: [
+      items: [
         {
           id: BLOCK_SIZES[blockSize]?.price_id || "price_placeholder",
           quantity,
