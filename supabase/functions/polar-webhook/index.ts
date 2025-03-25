@@ -15,20 +15,13 @@ console.log("Request URL:", Deno.env.get("SUPABASE_URL"));
 // Get environment variables
 // Get Supabase URL and service key directly from environment
 // Try multiple possible environment variable names
-const supabaseUrl =
-  Deno.env.get("SUPABASE_URL") ||
-  Deno.env.get("PROJECT_URL") ||
-  Deno.env.get("VITE_SUPABASE_URL") ||
-  Deno.env.get("SUPABASE_PROJECT_URL");
+const supabaseUrl = "https://mbqihswchccmvqmjlpwq.supabase.co";
 
 const supabaseServiceKey =
-  Deno.env.get("SUPABASE_SERVICE_KEY") ||
-  Deno.env.get("SERVICE_ROLE_KEY") ||
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
-  Deno.env.get("VITE_SUPABASE_SERVICE_KEY");
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icWloc3djaGNjbXZxbWpscHdxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjY1OTE0MSwiZXhwIjoyMDU4MjM1MTQxfQ.544d5NIjRg9VoBi63CK8uk1SVmTUrZxOA0W67gfaTfk";
 
 // Check if environment variables are loaded properly
-if (!supabaseUrl || !supabaseServiceKey) {
+if (false) {
   console.error("Missing Supabase credentials:", {
     supabaseUrlSet: !!supabaseUrl,
     supabaseServiceKeySet: !!supabaseServiceKey,
