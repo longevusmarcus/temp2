@@ -184,7 +184,7 @@ export function PurchaseDialog({
         <DialogTrigger asChild>{trigger}</DialogTrigger>
       ) : !controlledOpen ? (
         <DialogTrigger asChild>
-          <Button>Purchase Pixels</Button>
+          <span style={{ display: "none" }}></span>
         </DialogTrigger>
       ) : null}
       <DialogContent className="sm:max-w-[600px] sm:max-h-[80vh] overflow-y-auto backdrop-blur-sm bg-background/95">
