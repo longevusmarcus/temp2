@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Header from "./Header";
 import PixelGrid from "./PixelGrid";
 import GridControls from "./GridControls";
@@ -27,9 +27,15 @@ const Home = () => {
     fetchStats,
   } = useStore();
 
+  // Use ref to ensure fetch only happens once
+  const hasFetchedRef = useRef(false);
+
   // Fetch stats when component mounts
   useEffect(() => {
-    fetchStats();
+    if (!hasFetchedRef.current) {
+      fetchStats();
+      hasFetchedRef.current = true;
+    }
   }, []); // Empty dependency array ensures it runs only once
 
   // Filter blocks when search or category changes

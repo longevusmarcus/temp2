@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useStore } from "../lib/store";
 import { Card } from "./ui/card";
 import { Progress } from "./ui/progress";
@@ -12,9 +12,15 @@ const StatsPanel = () => {
     fetchStats,
   } = useStore();
 
-  // Fetch stats when component mounts
+  // Use ref to ensure fetch only happens once
+  const hasFetchedRef = useRef(false);
+
+  // Fetch stats when component mounts, but only once
   useEffect(() => {
-    fetchStats();
+    if (!hasFetchedRef.current) {
+      fetchStats();
+      hasFetchedRef.current = true;
+    }
   }, []); // Empty dependency array ensures it runs only once
 
   // Calculate percentages for progress bars
