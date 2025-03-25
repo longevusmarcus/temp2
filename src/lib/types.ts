@@ -52,7 +52,7 @@ export interface BlockSizeInfo {
 
 export const BLOCK_SIZES: Record<
   string,
-  BlockSizeInfo & { price_id?: string }
+  BlockSizeInfo & { price_id?: string; product_id?: string }
 > = {
   small: {
     width: 10,
@@ -60,6 +60,7 @@ export const BLOCK_SIZES: Record<
     label: "10×10",
     price: 10,
     price_id: "afc4fdfb-a692-4bbd-be05-37fd5ab3891c",
+    product_id: "small-pixel-block",
   },
   medium: {
     width: 20,
@@ -67,6 +68,7 @@ export const BLOCK_SIZES: Record<
     label: "20×20",
     price: 35,
     price_id: "9ac26644-0e8c-4b98-9252-557c4289d4b0",
+    product_id: "medium-pixel-block",
   },
   large: {
     width: 50,
@@ -74,6 +76,7 @@ export const BLOCK_SIZES: Record<
     label: "50×50",
     price: 200,
     price_id: "09855163-acad-478f-b537-4de9c1c7eb14",
+    product_id: "large-pixel-block",
   },
 };
 
