@@ -15,7 +15,7 @@ const StatsPanel = () => {
   // Fetch stats when component mounts
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, []); // Empty dependency array ensures it runs only once
 
   // Calculate percentages for progress bars
   const purchasedPercentage =
