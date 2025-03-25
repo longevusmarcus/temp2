@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "./supabase-client";
-import { PixelBlock, PurchaseData } from "./types";
+import { PixelBlock, PurchaseData, BLOCK_SIZES } from "./types";
 
 interface StoreState {
   isLoading: boolean;
