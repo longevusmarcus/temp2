@@ -70,19 +70,53 @@ const PaymentForm = ({
         },
       };
 
+      console.log("Creating payment session with data:", purchaseData);
+
+      // Check if Polar token is available
+      if (!import.meta.env.VITE_POLAR_ACCESS_TOKEN) {
+        console.error("Missing Polar access token");
+        setPaymentError(
+          "Payment configuration error: Missing Polar access token. Please contact support.",
+        );
+        setIsProcessing(false);
+        return;
+      }
+
       const { sessionId, url } = await createPaymentSession(purchaseData);
 
       // Log the session details
       console.log(`Payment session created: ${sessionId}`);
       console.log(`Redirect URL: ${url}`);
 
+      if (!url) {
+        throw new Error("No redirect URL returned from payment provider");
+      }
+
       // Redirect to Polar.sh checkout page
       window.location.href = url;
     } catch (error) {
       console.error("Payment error:", error);
-      setPaymentError(
-        "There was an error processing your payment. Please try again.",
-      );
+      let errorMessage =
+        "There was an error processing your payment. Please try again.";
+
+      // More specific error messages based on the error
+      if (error instanceof Error) {
+        if (error.message.includes("Failed to save checkout data")) {
+          errorMessage =
+            "Database error: Unable to save your checkout information. Please try again later.";
+        } else if (error.message.includes("price_id")) {
+          errorMessage =
+            "Product configuration error: Invalid price ID. Please contact support.";
+        } else if (error.message.includes("Network")) {
+          errorMessage =
+            "Network error: Please check your internet connection and try again.";
+        }
+
+        // Log the detailed error for debugging
+        console.error("Detailed payment error:", error.message);
+      }
+
+      setPaymentError(errorMessage);
       setIsProcessing(false);
     }
   };
