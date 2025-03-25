@@ -17,5 +17,6 @@
   ],
   "github": {
     "silent": true
-  }
+  },
+  "nodeVersion": "20.x"
 }
