@@ -7,25 +7,29 @@ export const calculateTotalCost = (
   blockSize: number | string,
   quantity: number,
 ): number => {
-  // Base price per block
-  const basePrice = 10;
+  // Fixed prices per block size according to Polar
+  const priceMap = {
+    small: 10,
+    medium: 35,
+    large: 200,
+  };
 
-  // Convert string blockSize to number if needed
-  const size =
-    typeof blockSize === "string"
-      ? blockSize === "small"
-        ? 1
-        : blockSize === "medium"
-          ? 2
-          : 4
-      : blockSize;
+  // Get price based on block size
+  let price = 0;
+  if (typeof blockSize === "string") {
+    price = priceMap[blockSize] || 5; // Default to small price if not found
+  } else {
+    // Legacy number-based block sizes
+    if (blockSize === 1)
+      price = 10; // small
+    else if (blockSize === 2)
+      price = 35; // medium
+    else if (blockSize === 4)
+      price = 200; // large
+    else price = 10; // Default to small price
+  }
 
-  // Apply discount for larger blocks
-  let priceMultiplier = 1;
-  if (size === 2) priceMultiplier = 3.5; // 2x2 blocks cost 3.5x more than 1x1
-  if (size === 4) priceMultiplier = 12; // 4x4 blocks cost 12x more than 1x1
-
-  return basePrice * priceMultiplier * quantity;
+  return price * quantity;
 };
 
 /**
@@ -42,7 +46,7 @@ export const createPaymentSession = async (
     // Import the Polar client
     const { polar } = await import("./polar");
 
-    // Map block sizes to product IDs
+    // Map block sizes to product IDs - using the correct IDs from Polar
     const productIdMap = {
       small: "cfbaa98b-9c03-47ba-902a-d4bd72309bf0",
       medium: "77108715-fe2a-4dbe-bd7e-d6f94c636ee3",
@@ -58,13 +62,12 @@ export const createPaymentSession = async (
       `Creating Polar checkout for product: ${productId}, size: ${blockSize}, quantity: ${quantity}`,
     );
 
-    // Create a checkout session with Polar
+    // Create a checkout session with Polar using their API format
+    // See: https://docs.polar.sh/features/checkout/session
     const checkout = await polar.checkouts.create({
       productId,
-      successUrl:
-        window.location.origin +
-        "/payment-success?session_id={CHECKOUT_ID}&status=success",
-      cancelUrl: window.location.origin + "/payment-cancel",
+      successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_ID}&status=success`,
+      cancelUrl: `${window.location.origin}/payment-cancel`,
       customerEmail: email,
       metadata: {
         blockSize,
@@ -87,10 +90,7 @@ export const createPaymentSession = async (
       email,
       block_size: blockSize,
       quantity,
-      amount: calculateTotalCost(
-        blockSize === "small" ? 1 : blockSize === "medium" ? 2 : 4,
-        quantity,
-      ),
+      amount: calculateTotalCost(blockSize, quantity),
       location: location ? JSON.stringify(location) : null,
       status: "pending",
       metadata: JSON.stringify(projectDetails),
@@ -117,8 +117,8 @@ export const verifyPayment = async (sessionId: string) => {
   try {
     console.log(`Verifying payment for session: ${sessionId}`);
 
-    // For development/testing, if the session ID contains "success", consider it successful
-    if (sessionId.includes("success")) {
+    // For development/testing, if the session ID contains "success" and we're not in production, consider it successful
+    if (sessionId.includes("success") && !import.meta.env.PROD) {
       console.log(
         "Development mode: Auto-approving payment based on success in session ID",
       );
