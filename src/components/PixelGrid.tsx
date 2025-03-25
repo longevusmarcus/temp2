@@ -6,10 +6,9 @@ import { ZoomIn, ZoomOut, Move } from "lucide-react";
 interface PixelGridProps {
   blocks: PixelBlock[];
   gridSize?: number;
-  gridRef?: React.RefObject<HTMLDivElement>;
 }
 
-function PixelGrid({ blocks, gridSize = 1000000, gridRef }: PixelGridProps) {
+function PixelGrid({ blocks, gridSize = 1000000 }: PixelGridProps) {
   // Start with a medium scale to see the grid
   const [scale, setScale] = useState(0.4);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -92,12 +91,7 @@ function PixelGrid({ blocks, gridSize = 1000000, gridRef }: PixelGridProps) {
 
       {/* Grid container */}
       <div
-        ref={(el) => {
-          containerRef.current = el;
-          if (gridRef && el) {
-            gridRef.current = el;
-          }
-        }}
+        ref={containerRef}
         className="flex-1 cursor-move relative overflow-hidden"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}

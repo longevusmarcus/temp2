@@ -16,7 +16,6 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Projects");
   const [filteredBlocks, setFilteredBlocks] = useState<PixelBlock[]>([]);
-  const gridRef = useRef<HTMLDivElement>(null);
 
   // Get data from store
   const {
@@ -32,25 +31,6 @@ const Home = () => {
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
-
-  // Scroll to center of grid when component mounts
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (gridRef.current) {
-        const gridRect = gridRef.current.getBoundingClientRect();
-        const centerX = gridRect.left + gridRect.width / 2;
-        const centerY = gridRect.top + gridRect.height / 2;
-
-        window.scrollTo({
-          left: centerX - window.innerWidth / 2,
-          top: centerY - window.innerHeight / 2,
-          behavior: "smooth",
-        });
-      }
-    }, 500); // Small delay to ensure grid is rendered
-
-    return () => clearTimeout(timer);
-  }, []);
 
   // Filter blocks when search or category changes
   useEffect(() => {
@@ -139,7 +119,6 @@ const Home = () => {
             <PixelGrid
               blocks={filteredBlocks.length > 0 ? filteredBlocks : pixelBlocks}
               gridSize={1000}
-              gridRef={gridRef}
             />
           </div>
         </div>
