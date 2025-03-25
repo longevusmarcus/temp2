@@ -20,7 +20,7 @@ const Header = ({
   };
 
   return (
-    <header className="w-full h-20 border-b border-gray-800 text-white flex items-center justify-between px-4 md:px-8 fixed top-0 left-0 z-50">
+    <header className="w-full h-20 border-b border-gray-800 text-white flex items-center justify-between px-4 md:px-8 z-10">
       {/* Logo and Title */}
       <div className="flex items-center">
         <a
