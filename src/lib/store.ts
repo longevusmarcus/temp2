@@ -4,6 +4,7 @@ import { PixelBlock, PurchaseData } from "./types";
 
 interface StoreState {
   isLoading: boolean;
+  isFetchingStats: boolean;
   pixelBlocks: PixelBlock[];
   purchasedPixels: number;
   availablePixels: number;
@@ -16,6 +17,7 @@ interface StoreState {
 
 export const useStore = create<StoreState>((set, get) => ({
   isLoading: false,
+  isFetchingStats: false,
   pixelBlocks: [],
   purchasedPixels: 0,
   availablePixels: 1000000, // Default to 1 million pixels
@@ -57,13 +59,13 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   fetchStats: async () => {
-    // Prevent multiple simultaneous fetches
-    if (get().isLoading) {
+    // Enhanced guard to prevent multiple simultaneous fetches
+    if (get().isFetchingStats || get().isLoading) {
       console.log("Stats fetch already in progress, skipping...");
       return;
     }
 
-    set({ isLoading: true });
+    set({ isFetchingStats: true });
     console.log("Starting to fetch stats from Supabase...");
     try {
       // Get total projects count
@@ -97,10 +99,11 @@ export const useStore = create<StoreState>((set, get) => ({
         availablePixels,
         totalPixels,
         isLoading: false,
+        isFetchingStats: false,
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
-      set({ isLoading: false });
+      set({ isLoading: false, isFetchingStats: false });
     }
   },
 
