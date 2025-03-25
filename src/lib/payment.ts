@@ -85,8 +85,9 @@ export const createPaymentSession = async (
     console.log("Polar checkout created:", checkout);
     console.log("Checkout URL:", checkout.url);
 
-    // Store the payment intent in the database
+    // Store ONLY the payment intent in the database
     // Changed session_id to checkout_id to match the database schema
+    // Note: We only store checkout info here, NOT creating projects yet
     await supabase.from("polar_checkouts").insert({
       checkout_id: checkout.id,
       email,
@@ -97,6 +98,10 @@ export const createPaymentSession = async (
       status: "pending",
       metadata: JSON.stringify(projectDetails),
     });
+
+    console.log(
+      "Payment intent stored in database with pending status. Projects will be created after successful payment.",
+    );
 
     return {
       success: true,

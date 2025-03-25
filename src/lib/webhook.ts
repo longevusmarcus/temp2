@@ -11,15 +11,20 @@ const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 // This function would be called by a webhook handler when a payment is successful
 export const handleSuccessfulPayment = async (sessionData: any) => {
-  // Verify payment status is successful before proceeding
-  if (
-    !sessionData ||
-    (sessionData.status !== "completed" && sessionData.status !== "succeeded")
-  ) {
-    console.error("Payment not successful, aborting project creation");
-    return false;
-  }
   try {
+    // First, strictly verify payment status is successful before proceeding
+    if (
+      !sessionData ||
+      (sessionData.status !== "completed" && sessionData.status !== "succeeded")
+    ) {
+      console.error("Payment not successful, aborting project creation");
+      return false;
+    }
+
+    console.log(
+      "Payment verified as successful, proceeding with project creation",
+    );
+
     // Extract purchase data from the session metadata
     const metadata = sessionData.metadata || {};
     const purchaseData: PurchaseData = {
@@ -37,6 +42,7 @@ export const handleSuccessfulPayment = async (sessionData: any) => {
     };
 
     // For each location, create a project entry in the database
+    // This only happens AFTER payment verification
     for (const location of purchaseData.locations) {
       const { data, error } = await supabase.from("projects").insert({
         project_name: purchaseData.projectDetails.projectName,
@@ -68,6 +74,9 @@ export const handleSuccessfulPayment = async (sessionData: any) => {
       }
     }
 
+    console.log(
+      "Project creation completed successfully after payment verification",
+    );
     return true;
   } catch (error) {
     console.error("Error handling successful payment:", error);
