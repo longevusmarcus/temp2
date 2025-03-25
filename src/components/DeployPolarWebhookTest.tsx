@@ -26,6 +26,75 @@ const DeployPolarWebhookTest = () => {
     latency?: number;
     lastChecked?: Date;
   }>({ online: navigator.onLine });
+  // Function to run detailed network diagnostics
+  const runNetworkDiagnostics = async () => {
+    try {
+      const results = await Promise.allSettled([
+        // Test general internet connectivity
+        fetch("https://www.google.com/generate_204", {
+          method: "HEAD",
+          mode: "no-cors",
+          cache: "no-cache",
+          signal: AbortSignal.timeout(5000),
+        }),
+
+        // Test Supabase API connectivity
+        fetch("https://api.supabase.com/", {
+          method: "HEAD",
+          mode: "no-cors",
+          cache: "no-cache",
+          signal: AbortSignal.timeout(5000),
+        }),
+
+        // Test Supabase Functions connectivity (your project)
+        fetch(
+          `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/`,
+          {
+            method: "HEAD",
+            mode: "no-cors",
+            cache: "no-cache",
+            signal: AbortSignal.timeout(5000),
+          },
+        ),
+      ]);
+
+      const internetResult = results[0].status === "fulfilled";
+      const supabaseApiResult = results[1].status === "fulfilled";
+      const supabaseFunctionsResult = results[2].status === "fulfilled";
+
+      if (!internetResult) {
+        return {
+          issues: true,
+          message:
+            "General internet connectivity issues detected. Check your network connection.",
+        };
+      } else if (internetResult && !supabaseApiResult) {
+        return {
+          issues: true,
+          message:
+            "Cannot reach Supabase API. This may be due to firewall settings or Supabase service issues.",
+        };
+      } else if (
+        internetResult &&
+        supabaseApiResult &&
+        !supabaseFunctionsResult
+      ) {
+        return {
+          issues: true,
+          message:
+            "Cannot reach your Supabase project's functions endpoint. Check your project ID and project status.",
+        };
+      }
+
+      return { issues: false };
+    } catch (error) {
+      console.error("Error running network diagnostics:", error);
+      return {
+        issues: true,
+        message: `Error during network diagnostics: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+  };
 
   // Check network connectivity and latency
   useEffect(() => {
@@ -194,6 +263,15 @@ const DeployPolarWebhookTest = () => {
         }
       }, 5000);
 
+      // Add more detailed network diagnostics before attempting deployment
+      const networkDiagnostics = await runNetworkDiagnostics();
+      if (networkDiagnostics.issues) {
+        setDeployResult((prev) => ({
+          ...prev,
+          message: `Network diagnostic issues detected: ${networkDiagnostics.message}`,
+        }));
+      }
+
       // Wrap in timeout to prevent UI from hanging indefinitely
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(
@@ -230,10 +308,25 @@ const DeployPolarWebhookTest = () => {
         errorMessage.includes("Network error")
       ) {
         errorMessage =
-          "Network connection issue detected. Please check your internet connection and ensure you can reach api.supabase.com.";
+          "Network connection issue detected. Please check your internet connection and ensure you can reach api.supabase.com. This could be due to firewall settings, VPN restrictions, or corporate network policies blocking the connection.";
       } else if (errorMessage.includes("timed out")) {
         errorMessage =
-          "The request timed out. This could be due to slow internet connection or the Supabase API being temporarily overloaded.";
+          "The request timed out. This could be due to slow internet connection or the Supabase API being temporarily overloaded. Try again when you have a more stable connection.";
+      } else if (
+        errorMessage.includes("CORS") ||
+        errorMessage.includes("cross-origin")
+      ) {
+        errorMessage =
+          "Cross-Origin Resource Sharing (CORS) issue detected. This is likely due to browser security restrictions. Try using a different browser or network connection.";
+      } else if (
+        errorMessage.includes("401") ||
+        errorMessage.includes("unauthorized")
+      ) {
+        errorMessage =
+          "Authentication error. Please verify your Supabase service key is correct and has the necessary permissions.";
+      } else if (errorMessage.includes("404")) {
+        errorMessage =
+          "Resource not found. Please verify your Supabase project ID is correct and the API endpoint hasn't changed.";
       }
 
       setDeployResult({
@@ -539,6 +632,30 @@ const DeployPolarWebhookTest = () => {
                           Check Supabase Status Page
                         </a>{" "}
                         for any ongoing service issues
+                      </li>
+                      <li>
+                        Try using a different network connection (e.g., switch
+                        from WiFi to mobile hotspot)
+                      </li>
+                      <li>
+                        Temporarily disable any VPN, firewall, or security
+                        software that might be blocking the connection
+                      </li>
+                      <li>
+                        Try using a different browser or device to rule out
+                        browser-specific issues
+                      </li>
+                      <li>
+                        <a
+                          href={`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/polar-webhook/`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:text-blue-300 underline"
+                        >
+                          Open your webhook URL directly
+                        </a>{" "}
+                        to check if it's accessible (should return a 405 Method
+                        Not Allowed for GET requests)
                       </li>
                     </ul>
                   </div>
