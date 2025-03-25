@@ -29,6 +29,7 @@ const supabase =
 export async function deployEdgeFunction(
   functionName: string,
   functionCode: string,
+  envVars?: Record<string, string>,
 ): Promise<{ success: boolean; message: string; data?: any }> {
   try {
     console.log(`Deploying edge function: ${functionName}`);
@@ -72,7 +73,9 @@ export async function deployEdgeFunction(
           import_map: {},
           entrypoint_path: "index.ts",
           content: btoa(functionCode), // Base64 encode the function code
+          ...(envVars && { env_vars: envVars }),
         }),
+        credentials: "include",
       },
     );
 
@@ -177,7 +180,7 @@ export async function deployPolarWebhook(): Promise<{
 }> {
   try {
     console.log(
-      "Starting polar-webhook deployment with Express.js implementation...",
+      "Starting polar-webhook deployment with Deno implementation for Supabase Edge Functions...",
     );
 
     // Get the Supabase project ID and service key from environment variables
@@ -185,6 +188,7 @@ export async function deployPolarWebhook(): Promise<{
       .VITE_SUPABASE_PROJECT_ID as string;
     const supabaseServiceKey = import.meta.env
       .VITE_SUPABASE_SERVICE_KEY as string;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 
     // Validate required environment variables
     if (!supabaseProjectId) {
@@ -201,6 +205,13 @@ export async function deployPolarWebhook(): Promise<{
       };
     }
 
+    if (!supabaseUrl) {
+      return {
+        success: false,
+        message: "VITE_SUPABASE_URL environment variable is not set",
+      };
+    }
+
     // Get the function code from the file
     const functionCode = await getFunctionCode(
       "./supabase/functions/polar-webhook/index.ts",
@@ -212,24 +223,37 @@ export async function deployPolarWebhook(): Promise<{
       };
     }
 
-    console.log(
-      `Using Express.js polar-webhook code (${functionCode.length} bytes)`,
-    );
+    console.log(`Using Deno polar-webhook code (${functionCode.length} bytes)`);
 
     console.log(
       `Deploying to project ID: ${supabaseProjectId.substring(0, 5)}...`,
     );
 
-    // Deploy the function
-    const result = await deployEdgeFunction("polar-webhook", functionCode);
+    // Add environment variables to the function code
+    const envVarsComment = `
+// Environment variables will be set during deployment:
+// - SUPABASE_URL: ${import.meta.env.VITE_SUPABASE_URL ? "Will be set" : "NOT SET"}
+// - SUPABASE_SERVICE_KEY: ${import.meta.env.VITE_SUPABASE_SERVICE_KEY ? "Will be set" : "NOT SET"}
+// - VITE_SUPABASE_URL: ${import.meta.env.VITE_SUPABASE_URL ? "Will be set" : "NOT SET"}
+// - VITE_SUPABASE_SERVICE_KEY: ${import.meta.env.VITE_SUPABASE_SERVICE_KEY ? "Will be set" : "NOT SET"}
+`;
 
-    // Also deploy the webhook handler
-    const handlerCode = await getFunctionCode(
-      "./supabase/functions/polar-webhook/webhook-handler.ts",
+    const functionCodeWithEnvComment = functionCode.replace(
+      "// Get environment variables",
+      `// Get environment variables${envVarsComment}`,
     );
-    if (handlerCode) {
-      await deployEdgeFunction("polar-webhook-handler", handlerCode);
-    }
+
+    // Deploy the function with environment variables
+    const result = await deployEdgeFunction(
+      "polar-webhook",
+      functionCodeWithEnvComment,
+      {
+        SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+        SUPABASE_SERVICE_KEY: import.meta.env.VITE_SUPABASE_SERVICE_KEY,
+        VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+        VITE_SUPABASE_SERVICE_KEY: import.meta.env.VITE_SUPABASE_SERVICE_KEY,
+      },
+    );
 
     return result;
   } catch (error) {

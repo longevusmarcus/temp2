@@ -640,8 +640,9 @@ const DeployPolarWebhookTest = () => {
                           <li className="flex items-start">
                             <Shield className="h-3 w-3 text-gray-400 mt-0.5 mr-1" />
                             <span>
-                              Try accessing the URL from a different network
-                              (e.g., mobile data instead of WiFi)
+                              Make sure you're using a Deno-compatible
+                              implementation for Supabase Edge Functions, not
+                              Express.js
                             </span>
                           </li>
                           <li className="flex items-start">
