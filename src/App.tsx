@@ -75,7 +75,8 @@ function App() {
             <Route path="/tempobook/*" element={<div />} />
           )}
         </Routes>
-        {/* Fix for useRoutes - must be outside of JSX */}
+        {/* Render tempo routes if needed */}
+        {tempoRoutes}
       </div>
     </Suspense>
   );
