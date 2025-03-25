@@ -140,12 +140,14 @@ function PixelGrid({ blocks, gridSize = 1000000 }: PixelGridProps) {
                   top: `${block.y}px`,
                   width: `${block.width}px`,
                   height: `${block.height}px`,
-                  backgroundColor: block.thumbnailUrl
-                    ? "transparent"
-                    : block.color || "#5588ff",
-                  backgroundImage: block.thumbnailUrl
-                    ? `url(${block.thumbnailUrl})`
-                    : "none",
+                  backgroundColor:
+                    block.thumbnailUrl || block.thumbnail_url
+                      ? "transparent"
+                      : block.color || "#5588ff",
+                  backgroundImage:
+                    block.thumbnailUrl || block.thumbnail_url
+                      ? `url(${block.thumbnailUrl || block.thumbnail_url})`
+                      : "none",
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                   backgroundRepeat: "no-repeat",
@@ -158,7 +160,7 @@ function PixelGrid({ blocks, gridSize = 1000000 }: PixelGridProps) {
                   }
                 }}
               >
-                {!block.thumbnailUrl &&
+                {!(block.thumbnailUrl || block.thumbnail_url) &&
                   block.width >= 20 &&
                   block.height >= 20 && (
                     <div className="absolute inset-0 flex items-center justify-center p-1 overflow-hidden">
