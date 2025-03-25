@@ -1,18 +1,26 @@
 import { Polar } from "@polar-sh/sdk";
 
 // Initialize the Polar client with better error logging
+const polarToken = import.meta.env.VITE_POLAR_ACCESS_TOKEN;
+
+// Ensure token is properly trimmed to remove any whitespace
+const cleanToken = polarToken ? polarToken.trim() : "";
+
 export const polar = new Polar({
-  accessToken: import.meta.env.VITE_POLAR_ACCESS_TOKEN ?? "",
+  accessToken: cleanToken,
 });
 
 // Log Polar configuration on initialization
-const polarToken = import.meta.env.VITE_POLAR_ACCESS_TOKEN;
 console.log(
-  `Polar client initialized with token: ${polarToken ? "[SET]" : "[NOT SET]"}`,
+  `Polar client initialized with token: ${cleanToken ? "[SET]" : "[NOT SET]"} (length: ${cleanToken.length})`,
 );
-if (!polarToken) {
+if (!cleanToken) {
   console.warn(
     "WARNING: Polar access token is not set. Payment processing will fail.",
+  );
+} else {
+  console.log(
+    `Token starts with: ${cleanToken.substring(0, 5)}... and ends with: ...${cleanToken.substring(cleanToken.length - 5)}`,
   );
 }
 

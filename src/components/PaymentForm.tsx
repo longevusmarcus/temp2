@@ -34,7 +34,20 @@ export default function PaymentForm({
   // Check if Polar token is set
   useEffect(() => {
     const token = import.meta.env.VITE_POLAR_ACCESS_TOKEN;
-    setPolarTokenSet(!!token);
+    // Ensure token is properly trimmed to remove any whitespace
+    const cleanToken = token ? token.trim() : "";
+    setPolarTokenSet(!!cleanToken);
+
+    if (cleanToken) {
+      console.log(
+        `PaymentForm: Polar token is set (length: ${cleanToken.length})`,
+      );
+      console.log(
+        `Token starts with: ${cleanToken.substring(0, 5)}... and ends with: ...${cleanToken.substring(cleanToken.length - 5)}`,
+      );
+    } else {
+      console.warn("PaymentForm: Polar token is not set or is empty");
+    }
   }, []);
 
   const handleSubmit = async () => {
