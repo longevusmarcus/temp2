@@ -28,14 +28,36 @@ export const createPaymentSession = async (
   location: { x: number; y: number } | null,
 ) => {
   try {
-    // For production, this would call the Polar API
-    // For now, we'll create a mock session
-    const sessionId = `session_${Math.random().toString(36).substring(2, 15)}`;
-    const successUrl = `/payment-success?session_id=${sessionId}&status=success`;
+    // Import the Polar client
+    const { polar } = await import("./polar");
+
+    // Determine the product ID based on block size
+    let productId = "";
+    if (blockSize === 1) productId = "cfbaa98b-9c03-47ba-902a-d4bd72309bf0"; // small
+    if (blockSize === 2) productId = "77108715-fe2a-4dbe-bd7e-d6f94c636ee3"; // medium
+    if (blockSize === 4) productId = "7f85613a-4ad5-4d36-9a9f-92f44d23087a"; // large
+
+    if (!productId) {
+      throw new Error(`Invalid block size: ${blockSize}`);
+    }
+
+    // Create a checkout session with Polar
+    const checkout = await polar.checkouts.create({
+      productId,
+      quantity,
+      customerEmail: email,
+      metadata: {
+        blockSize: String(blockSize),
+        location: location ? JSON.stringify(location) : null,
+        email,
+      },
+      successUrl: window.location.origin + "/payment-success",
+      cancelUrl: window.location.origin + "/payment-cancel",
+    });
 
     // Store the payment intent in the database
     await supabase.from("polar_checkouts").insert({
-      session_id: sessionId,
+      session_id: checkout.id,
       email,
       block_size: blockSize,
       quantity,
@@ -46,8 +68,8 @@ export const createPaymentSession = async (
 
     return {
       success: true,
-      sessionId,
-      url: successUrl,
+      sessionId: checkout.id,
+      url: checkout.url,
     };
   } catch (error) {
     console.error("Error creating payment session:", error);
@@ -63,26 +85,42 @@ export const createPaymentSession = async (
  */
 export const verifyPayment = async (sessionId: string) => {
   try {
-    // In production, this would verify with Polar API
-    // For now, we'll simulate a successful verification
+    // Import the Polar client
+    const { polar } = await import("./polar");
 
-    // Update the payment status in the database
-    const { error } = await supabase
-      .from("polar_checkouts")
-      .update({ status: "completed" })
-      .eq("session_id", sessionId);
+    // Verify the checkout status with Polar API
+    const checkout = await polar.checkouts.get({
+      id: sessionId,
+    });
 
-    if (error) {
-      console.error("Error updating payment status:", error);
+    // Check if the payment was successful
+    const isCompleted = checkout.status === "succeeded";
+
+    if (isCompleted) {
+      // Update the payment status in the database
+      const { error } = await supabase
+        .from("polar_checkouts")
+        .update({ status: "completed" })
+        .eq("session_id", sessionId);
+
+      if (error) {
+        console.error("Error updating payment status:", error);
+        return {
+          success: false,
+          error: "Failed to update payment status",
+        };
+      }
+
+      return {
+        success: true,
+        checkout,
+      };
+    } else {
       return {
         success: false,
-        error: "Failed to update payment status",
+        error: `Payment not completed. Status: ${checkout.status}`,
       };
     }
-
-    return {
-      success: true,
-    };
   } catch (error) {
     console.error("Error verifying payment:", error);
     return {
