@@ -31,23 +31,12 @@ export default function PaymentForm({
   const [error, setError] = useState<string | null>(null);
   const [polarTokenSet, setPolarTokenSet] = useState<boolean | null>(null);
 
-  // Check if Polar token is set
+  // Check if Polar token is set - using hardcoded token for development
   useEffect(() => {
-    const token = import.meta.env.VITE_POLAR_ACCESS_TOKEN;
-    // Ensure token is properly trimmed to remove any whitespace
-    const cleanToken = token ? token.trim() : "";
-    setPolarTokenSet(!!cleanToken);
-
-    if (cleanToken) {
-      console.log(
-        `PaymentForm: Polar token is set (length: ${cleanToken.length})`,
-      );
-      console.log(
-        `Token starts with: ${cleanToken.substring(0, 5)}... and ends with: ...${cleanToken.substring(cleanToken.length - 5)}`,
-      );
-    } else {
-      console.warn("PaymentForm: Polar token is not set or is empty");
-    }
+    // Using hardcoded token for development
+    const token = "polar_oat_dbK5SfcFfc7GZmp4bjqZ8ODQQzp3LC9vJ2zZV3UlhPT";
+    setPolarTokenSet(true);
+    console.log("PaymentForm: Using hardcoded Polar token for development");
   }, []);
 
   const handleSubmit = async () => {

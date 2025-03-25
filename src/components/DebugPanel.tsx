@@ -17,7 +17,7 @@ const DebugPanel = () => {
   const [checkouts, setCheckouts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [polarExternalId, setPolarExternalId] = useState("");
+  const [polarExternalId, setPolarExternalId] = useState("customer_1234");
   const [polarAccessToken, setPolarAccessToken] = useState("");
   const [polarResult, setPolarResult] = useState<any>(null);
   const [polarLoading, setPolarLoading] = useState(false);
