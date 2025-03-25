@@ -11,7 +11,12 @@ set -e
 # Run TypeScript check but don't fail on errors
 npx tsc --noEmit || true
 
+# Clear any cached files
+echo "Clearing build cache..."
+rm -rf node_modules/.vite
+rm -rf dist
+
 # Build the application with environment variables explicitly passed
-VITE_TEMPO=false npx vite build
+VITE_TEMPO=false VERCEL_FORCE_NO_BUILD_CACHE=1 npx vite build
 
 echo "Build completed successfully!"

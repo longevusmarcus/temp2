@@ -53,16 +53,15 @@ export async function createPaymentSession(purchaseData: any) {
     // Create checkout session with Polar
     const checkout = await polar.checkouts.create({
       successUrl: `${window.location.origin}/payment-success?session_id=${checkoutData.id}`,
-      cancelUrl:
-        `${window.location.origin}/payment-cancel?session_id=${checkoutData.id}` as any,
-      // Note: Using cancelUrl as per Polar SDK documentation
-      lineItems: [
+      // Use the correct property name according to Polar SDK
+      prices: [
         {
-          priceId: BLOCK_SIZES[blockSize]?.price_id || "price_placeholder",
+          id: BLOCK_SIZES[blockSize]?.price_id || "price_placeholder",
           quantity,
         },
       ],
       email: projectDetails.email,
+      // Explicitly remove any cancelUrl property
     });
 
     // Update checkout record with Polar session ID
