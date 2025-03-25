@@ -16,6 +16,7 @@ export default defineConfig({
     }),
     tempo(),
   ],
+  base: "/",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -25,8 +26,4 @@ export default defineConfig({
     // @ts-ignore
     allowedHosts: process.env.TEMPO === "true" ? true : undefined,
   },
-  optimizeDeps: {
-    include: ["react/jsx-dev-runtime", "react-dom/client", "react-router-dom"],
-  },
-  base: "./",
 });

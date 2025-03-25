@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "./ui/button";
-import { verifyPayment } from "@/lib/payment";
+import { verifyPayment } from "../lib/payment";
 
 const PaymentSuccessPage = () => {
   const [searchParams] = useSearchParams();

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Location, BlockSize, PixelBlock, BLOCK_SIZES } from "../lib/types";
-import { useStore } from "@/lib/store";
+import { useStore } from "../lib/store";
 
 interface GridLocationPickerProps {
   onSelectLocations: (locations: Location[]) => void;

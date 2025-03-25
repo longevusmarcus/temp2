@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
-import { useStore } from "@/lib/store";
+import { useStore } from "../lib/store";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Slider } from "./ui/slider";

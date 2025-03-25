@@ -5,8 +5,8 @@ import GridControls from "./GridControls";
 import ProjectHoverCard from "./ProjectHoverCard";
 import PurchaseDialog from "./PurchaseDialog";
 import StatsPanel from "./StatsPanel";
-import { useStore } from "@/lib/store";
-import { PixelBlock, PurchaseData } from "@/lib/types";
+import { useStore } from "../lib/store";
+import { PixelBlock, PurchaseData } from "../lib/types";
 
 const Home = () => {
   const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);

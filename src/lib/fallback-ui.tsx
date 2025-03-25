@@ -1,86 +1,63 @@
 import React from "react";
+import { Button } from "../components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 
 interface EnvironmentErrorFallbackProps {
-  errorType?: "missing" | "invalid" | null;
+  errorType: "missing" | "invalid" | null;
 }
 
-/**
- * A fallback UI component that displays when environment variables are missing or invalid
- */
-export const EnvironmentErrorFallback = ({
-  errorType = "missing",
-}: EnvironmentErrorFallbackProps) => {
+export const EnvironmentErrorFallback: React.FC<
+  EnvironmentErrorFallbackProps
+> = ({ errorType }) => {
+  const getErrorMessage = () => {
+    if (errorType === "missing") {
+      return "Missing Supabase environment variables. Please check your environment configuration.";
+    } else if (errorType === "invalid") {
+      return "Invalid Supabase URL format. Please check your environment configuration.";
+    }
+    return "Unknown environment error. Please check your configuration.";
+  };
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-gray-900 border border-gray-800 rounded-lg p-6 shadow-lg">
-        <h1 className="text-2xl font-bold text-purple-400 mb-4">
-          Configuration Error
-        </h1>
-
-        <div className="space-y-4">
-          <p className="text-gray-300">
-            {errorType === "invalid"
-              ? "The application couldn't connect to Supabase because the URL is invalid."
-              : "The application couldn't connect to Supabase because environment variables are missing."}
-          </p>
-
-          <div className="bg-amber-900/30 border border-amber-800 rounded-md p-4 text-sm">
-            <h2 className="font-medium text-amber-400 mb-2">
-              {errorType === "invalid"
-                ? "Invalid Supabase URL"
-                : "Missing Environment Variables"}
-            </h2>
-            <p className="text-gray-300 mb-2">
-              Please ensure the following environment variables are set
-              correctly in your Netlify dashboard:
-            </p>
-            <ul className="list-disc list-inside space-y-1 text-gray-400">
-              <li>
-                VITE_SUPABASE_URL{" "}
-                {errorType === "invalid" && "(must be a valid URL format)"}
-              </li>
-              <li>VITE_SUPABASE_ANON_KEY</li>
-              <li>SUPABASE_PROJECT_ID</li>
-              <li>SUPABASE_SERVICE_KEY</li>
-              <li>VITE_POLAR_ACCESS_TOKEN</li>
-            </ul>
-          </div>
-
-          {errorType === "invalid" && (
-            <div className="bg-red-900/30 border border-red-800 rounded-md p-4 text-sm">
-              <h2 className="font-medium text-red-400 mb-2">
-                URL Format Error
-              </h2>
-              <p className="text-gray-300 mb-2">
-                The VITE_SUPABASE_URL value is not in a valid URL format. It
-                should look like:
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <Card className="w-[450px] shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-red-600">Environment Error</CardTitle>
+          <CardDescription>
+            The application cannot start due to missing or invalid
+            configuration.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-sm">{getErrorMessage()}</p>
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+              <p className="text-sm text-amber-800">
+                Please make sure the following environment variables are
+                correctly set:
               </p>
-              <code className="block bg-gray-800 p-2 rounded text-green-400 text-xs overflow-auto">
-                https://your-project-id.supabase.co
-              </code>
-              <p className="text-gray-300 mt-2">
-                Make sure there are no extra spaces, quotes, or other characters
-                in the value.
-              </p>
+              <ul className="list-disc list-inside text-xs text-amber-700 mt-2 space-y-1">
+                <li>VITE_SUPABASE_URL</li>
+                <li>VITE_SUPABASE_ANON_KEY</li>
+              </ul>
             </div>
-          )}
-
-          <div className="bg-gray-800 p-4 rounded-md">
-            <h2 className="font-medium text-gray-300 mb-2">How to fix this:</h2>
-            <ol className="list-decimal list-inside space-y-2 text-gray-400">
-              <li>Go to your Netlify dashboard</li>
-              <li>Navigate to Site settings &rarr; Environment variables</li>
-              <li>
-                Check that all required variables are set{" "}
-                {errorType === "invalid" && "with correct formats"}
-              </li>
-              <li>Trigger a new deployment</li>
-            </ol>
           </div>
-        </div>
-      </div>
+        </CardContent>
+        <CardFooter>
+          <Button onClick={() => window.location.reload()} className="w-full">
+            Retry
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 };
 
-export default EnvironmentErrorFallback;
+// Additional fallback components can be added here
