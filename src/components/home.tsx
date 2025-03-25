@@ -7,6 +7,8 @@ import PurchaseDialog from "./PurchaseDialog";
 import StatsPanel from "./StatsPanel";
 import { useStore } from "../lib/store";
 import { PixelBlock, PurchaseData } from "../lib/types";
+import { Button } from "./ui/button";
+import { ShoppingCart } from "lucide-react";
 
 const Home = () => {
   const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
@@ -175,6 +177,13 @@ const Home = () => {
               thousands of developers, creators, and dreamers. Give your project
               a lasting home, and let your innovation stand the test of time.
             </p>
+            <Button
+              onClick={() => setIsPurchaseDialogOpen(true)}
+              className="mt-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all"
+            >
+              <ShoppingCart className="h-5 w-5 mr-2" />
+              Buy Pixels Now
+            </Button>
           </div>
         </section>
       </main>
@@ -202,6 +211,16 @@ const Home = () => {
           </div>
         </div>
       </footer>
+
+      {/* Floating Purchase Button (Mobile) */}
+      <div className="md:hidden fixed bottom-6 right-6 z-50">
+        <Button
+          onClick={() => setIsPurchaseDialogOpen(true)}
+          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
+        >
+          <ShoppingCart className="h-6 w-6" />
+        </Button>
+      </div>
 
       {/* Purchase Dialog */}
       <PurchaseDialog

@@ -61,6 +61,13 @@ const Header = ({
           >
             <Search className="h-5 w-5" />
           </Button>
+          <Button
+            onClick={onPurchaseClick}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+          >
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Buy Pixels
+          </Button>
         </div>
       </div>
 
@@ -96,6 +103,13 @@ const Header = ({
             >
               FAQ
             </a>
+            <button
+              onClick={onPurchaseClick}
+              className="text-gray-300 hover:text-purple-400 transition-colors flex items-center mt-2"
+            >
+              <ShoppingCart className="h-4 w-4 mr-1" />
+              Buy Pixels
+            </button>
           </nav>
         </div>
       )}
