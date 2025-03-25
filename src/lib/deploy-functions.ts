@@ -5,6 +5,9 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY as string;
 const supabaseProjectId = import.meta.env.VITE_SUPABASE_PROJECT_ID as string;
 
+// In browser environments, process.env is not available
+// We'll use the environment variables directly from import.meta.env instead
+
 // Log environment variables (masked for security)
 console.log("Deploy Functions Environment Variables:", {
   supabaseUrl: supabaseUrl ? `${supabaseUrl.substring(0, 8)}...` : "not set",

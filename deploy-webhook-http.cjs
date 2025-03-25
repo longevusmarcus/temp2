@@ -7,7 +7,7 @@ const https = require("https");
 const SUPABASE_PROJECT_ID =
   process.env.SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID;
 const SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY;
 
 console.log("Environment variables check:");
 console.log(
@@ -77,6 +77,14 @@ async function deployWebhook() {
     name: "polar-webhook",
     verify_jwt: false,
     body: webhookCode,
+    import_map: {},
+    entrypoint_path: "index.ts",
+    env_vars: {
+      SUPABASE_URL: process.env.VITE_SUPABASE_URL,
+      SUPABASE_SERVICE_KEY: SERVICE_ROLE_KEY,
+      VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL,
+      VITE_SUPABASE_SERVICE_KEY: process.env.VITE_SUPABASE_SERVICE_KEY
+    }
   });
 
   return new Promise((resolve, reject) => {

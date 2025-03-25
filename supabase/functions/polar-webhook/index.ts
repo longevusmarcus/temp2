@@ -14,7 +14,16 @@ const supabaseUrl =
   Deno.env.get("VITE_SUPABASE_URL") ||
   Deno.env.get("PROJECT_URL");
 const supabaseServiceKey =
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SERVICE_ROLE_KEY");
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+  Deno.env.get("SERVICE_ROLE_KEY") ||
+  Deno.env.get("VITE_SUPABASE_SERVICE_KEY") ||
+  Deno.env.get("SUPABASE_SERVICE_KEY");
+
+// Log environment variables for debugging (masked for security)
+console.log("Environment variables in edge function:", {
+  supabaseUrl: supabaseUrl ? `${supabaseUrl.substring(0, 8)}...` : "not set",
+  supabaseServiceKey: supabaseServiceKey ? "set (masked)" : "not set",
+});
 
 // Throw an error if credentials are missing
 if (!supabaseUrl || !supabaseServiceKey) {
@@ -23,7 +32,16 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") || "changeme-in-prod";
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Create Supabase client with proper error handling
+let supabase;
+try {
+  console.log("Creating Supabase client with URL and key");
+  supabase = createClient(supabaseUrl, supabaseServiceKey);
+} catch (error) {
+  console.error("Error creating Supabase client:", error);
+  throw new Error(`Failed to initialize Supabase client: ${error.message}`);
+}
+
 const webhooks = new Webhooks({ secret: WEBHOOK_SECRET });
 
 Deno.serve(async (req) => {
@@ -33,7 +51,17 @@ Deno.serve(async (req) => {
 
   if (req.method === "GET") {
     return new Response(
-      JSON.stringify({ status: "ok", message: "Webhook live" }),
+      JSON.stringify({
+        status: "ok",
+        message: "Webhook live",
+        env: {
+          hasSupabaseUrl: !!supabaseUrl,
+          hasServiceKey: !!supabaseServiceKey,
+          urlPrefix: supabaseUrl
+            ? supabaseUrl.substring(0, 8) + "..."
+            : "not set",
+        },
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
