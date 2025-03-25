@@ -648,6 +648,14 @@ const DeployPolarWebhookTest = () => {
                           <li className="flex items-start">
                             <Shield className="h-3 w-3 text-gray-400 mt-0.5 mr-1" />
                             <span>
+                              Check that VITE_SUPABASE_URL and
+                              VITE_SUPABASE_SERVICE_KEY environment variables
+                              are correctly set in your project settings
+                            </span>
+                          </li>
+                          <li className="flex items-start">
+                            <Shield className="h-3 w-3 text-gray-400 mt-0.5 mr-1" />
+                            <span>
                               If using a corporate network, check if it blocks
                               access to Supabase domains
                             </span>
