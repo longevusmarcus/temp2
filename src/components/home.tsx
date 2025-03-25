@@ -179,10 +179,9 @@ const Home = () => {
             </p>
             <Button
               onClick={() => setIsPurchaseDialogOpen(true)}
-              className="mt-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-full px-6 py-3 shadow-lg hover:shadow-purple-500/20 transition-all duration-300 font-medium"
+              className="mt-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-full px-6 py-3 shadow-lg hover:shadow-purple-500/40 transition-all duration-300 font-medium animate-slow-pulse hover:animate-none hover:scale-105 border border-purple-400/30"
             >
-              <ShoppingCart className="h-5 w-5 mr-2" />
-              Buy Pixels Now
+              Immortalize Now
             </Button>
           </div>
         </section>
