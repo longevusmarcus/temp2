@@ -1,9 +1,20 @@
 import { Polar } from "@polar-sh/sdk";
 
-// Initialize the Polar client
+// Initialize the Polar client with better error logging
 export const polar = new Polar({
   accessToken: import.meta.env.VITE_POLAR_ACCESS_TOKEN ?? "",
 });
+
+// Log Polar configuration on initialization
+const polarToken = import.meta.env.VITE_POLAR_ACCESS_TOKEN;
+console.log(
+  `Polar client initialized with token: ${polarToken ? "[SET]" : "[NOT SET]"}`,
+);
+if (!polarToken) {
+  console.warn(
+    "WARNING: Polar access token is not set. Payment processing will fail.",
+  );
+}
 
 /**
  * Get customer state by external ID
