@@ -13,6 +13,7 @@ import GridLocationPicker from "./GridLocationPicker";
 import BlockSizeSelector from "./BlockSizeSelector";
 import ProjectDetailsForm from "./ProjectDetailsForm";
 import PurchaseSummary from "./PurchaseSummary";
+import PaymentForm from "./PaymentForm";
 import { Location, ProjectDetails, BlockSize, BLOCK_SIZES } from "../lib/types";
 
 interface PurchaseDialogProps {
@@ -295,6 +296,7 @@ export function PurchaseDialog({
             <PurchaseSummary
               locations={locations}
               blockSize={BLOCK_SIZES[blockSize]}
+              cost={BLOCK_SIZES[blockSize].price}
               projectDetails={{
                 name: projectDetails.name,
                 developer: projectDetails.contactEmail,
@@ -314,14 +316,22 @@ export function PurchaseDialog({
 
         {step === "payment" && (
           <div className="space-y-4">
-            <div className="p-4 border rounded-md">
-              <p>Payment processing would be implemented here.</p>
-            </div>
-            <div className="flex justify-between mt-4">
-              <Button variant="outline" onClick={handleBack}>
-                Back
-              </Button>
-              <Button onClick={handlePurchase}>Complete Payment</Button>
+            <div className="p-4 border rounded-md bg-gray-800 border-gray-700">
+              <PaymentForm
+                blockSize={blockSize}
+                locations={locations}
+                projectDetails={{
+                  projectName: projectDetails.name,
+                  developerName: projectDetails.contactEmail,
+                  description: projectDetails.description,
+                  websiteUrl: projectDetails.website,
+                  thumbnail: projectDetails.image,
+                  category: projectDetails.category,
+                  email: projectDetails.contactEmail,
+                }}
+                onSubmit={handlePurchase}
+                onBack={handleBack}
+              />
             </div>
           </div>
         )}

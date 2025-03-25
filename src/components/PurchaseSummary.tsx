@@ -38,7 +38,7 @@ const PurchaseSummary = ({
     url: "https://example.com",
     category: "Web Development",
   },
-  cost = 25,
+  cost = 10,
   onConfirm = () => console.log("Purchase confirmed"),
   onBack = () => console.log("Go back"),
 }: PurchaseSummaryProps) => {
