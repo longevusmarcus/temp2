@@ -30,7 +30,7 @@ const Home = () => {
   // Fetch stats when component mounts
   useEffect(() => {
     fetchStats();
-  }, [fetchStats]);
+  }, []); // Removed fetchStats from dependency array to prevent infinite loop
 
   // Filter blocks when search or category changes
   useEffect(() => {
