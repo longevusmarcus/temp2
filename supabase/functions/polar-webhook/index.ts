@@ -21,6 +21,10 @@ console.log("Polar webhook Supabase configuration:", {
 // Initialize Express app
 const app = express();
 
+console.log("webhook.server_initialized", {
+  timestamp: new Date().toISOString(),
+});
+
 // Configure middleware
 app.use(express.json());
 app.use(
@@ -44,6 +48,12 @@ const webhooks = new Webhooks({
 
 // Handle preflight requests
 app.options("*", (req, res) => {
+  console.log("webhook.options_request_received", {
+    path: req.path,
+    method: req.method,
+    headers: req.headers,
+    timestamp: new Date().toISOString(),
+  });
   res.status(200).send("ok");
 });
 
@@ -105,19 +115,43 @@ function getBlockDimensions(blockSize: string): {
 
 // Main webhook endpoint
 app.post("/", async (req, res) => {
+  console.log("webhook.handler_called", {
+    path: req.path,
+    method: req.method,
+    headers: req.headers,
+    timestamp: new Date().toISOString(),
+  });
   try {
     // Get the raw payload and signature
     const payload = req.body;
     const signature = req.headers["webhook-signature"] as string;
 
+    console.log("webhook.payload_received", {
+      payloadSize: JSON.stringify(payload).length,
+      hasSignature: !!signature,
+      timestamp: new Date().toISOString(),
+    });
+
     // Verify the webhook signature
     let event;
     try {
+      console.log("webhook.validate_signature_attempt", {
+        signatureLength: signature ? signature.length : 0,
+        timestamp: new Date().toISOString(),
+      });
       event = webhooks.verify(JSON.stringify(payload), signature);
     } catch (err) {
       console.error("Invalid webhook signature", err);
+      console.log("webhook.signature_validation_failed", {
+        error: err.message,
+        timestamp: new Date().toISOString(),
+      });
       return res.status(401).json({ error: "Invalid signature" });
     }
+
+    console.log("webhook.signature_validated", {
+      timestamp: new Date().toISOString(),
+    });
 
     // Log the webhook event for debugging
     console.log("Received webhook:", JSON.stringify(payload));
@@ -137,6 +171,12 @@ app.post("/", async (req, res) => {
     }
 
     // Handle various Polar webhook events
+    console.log("webhook.processing_event_type", {
+      type: payload.type,
+      hasData: !!payload.data,
+      timestamp: new Date().toISOString(),
+    });
+
     if (
       (payload.type === "customer.state_changed" ||
         payload.type === "checkout.completed" ||
@@ -144,8 +184,18 @@ app.post("/", async (req, res) => {
         payload.type === "subscription.renewed") &&
       payload.data
     ) {
+      console.log("webhook.processing_payment_event", {
+        type: payload.type,
+        timestamp: new Date().toISOString(),
+      });
       // Get the checkout session ID from the payload
       const checkoutId = payload.data.checkout_id;
+
+      console.log("webhook.checkout_id_check", {
+        hasCheckoutId: !!checkoutId,
+        checkoutId: checkoutId || "MISSING",
+        timestamp: new Date().toISOString(),
+      });
 
       if (!checkoutId) {
         console.error("No checkout ID in webhook payload");
@@ -153,7 +203,10 @@ app.post("/", async (req, res) => {
       }
 
       // Get the checkout session details with detailed error handling
-      console.log(`Looking up checkout with ID: ${checkoutId}`);
+      console.log("webhook.lookup_checkout_start", {
+        checkoutId: checkoutId,
+        timestamp: new Date().toISOString(),
+      });
       const checkoutResult = await supabase
         .from("polar_checkouts")
         .select("*")
@@ -230,21 +283,66 @@ app.post("/", async (req, res) => {
       }
 
       // Check if payment is successful
+      const isCustomerStateChanged =
+        payload.type === "customer.state_changed" &&
+        payload.data.state === "active";
+      const isCheckoutCompleted =
+        payload.type === "checkout.completed" &&
+        (payload.data.status === "completed" ||
+          payload.data.status === "succeeded");
+      const isSubscriptionCreated =
+        payload.type === "subscription.created" &&
+        payload.data.status === "active";
+      const isSubscriptionRenewed =
+        payload.type === "subscription.renewed" &&
+        payload.data.status === "active";
+
+      console.log("webhook.payment_status_check", {
+        isCustomerStateChanged,
+        isCheckoutCompleted,
+        isSubscriptionCreated,
+        isSubscriptionRenewed,
+        payloadType: payload.type,
+        payloadState: payload.data.state,
+        payloadStatus: payload.data.status,
+        timestamp: new Date().toISOString(),
+      });
+
       if (
-        (payload.type === "customer.state_changed" &&
-          payload.data.state === "active") ||
-        (payload.type === "checkout.completed" &&
-          (payload.data.status === "completed" ||
-            payload.data.status === "succeeded")) ||
-        (payload.type === "subscription.created" &&
-          payload.data.status === "active") ||
-        (payload.type === "subscription.renewed" &&
-          payload.data.status === "active")
+        isCustomerStateChanged ||
+        isCheckoutCompleted ||
+        isSubscriptionCreated ||
+        isSubscriptionRenewed
       ) {
+        console.log("webhook.payment_successful", {
+          type: payload.type,
+          timestamp: new Date().toISOString(),
+        });
         // Extract purchase data from the checkout metadata
         const metadata = checkoutData.metadata || {};
+        console.log("webhook.metadata_extraction", {
+          hasMetadata: !!metadata,
+          metadataKeys: Object.keys(metadata),
+          timestamp: new Date().toISOString(),
+        });
+
         const blockSize = metadata.blockSize || "medium";
-        const locations = JSON.parse(metadata.locations || "[]");
+        let locations = [];
+        try {
+          locations = JSON.parse(metadata.locations || "[]");
+          console.log("webhook.locations_parsed", {
+            locationCount: locations.length,
+            locations: locations,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (parseError) {
+          console.error("webhook.locations_parse_error", {
+            error: parseError.message,
+            rawLocations: metadata.locations,
+            timestamp: new Date().toISOString(),
+          });
+        }
+
         const projectName = metadata.projectName || "";
         const developerName = metadata.developerName || "";
         const description = metadata.description || "";
@@ -257,8 +355,16 @@ app.post("/", async (req, res) => {
         console.log("Processing locations:", locations);
 
         // For each location, check for overlaps and then create a project entry in the database
+        console.log("webhook.begin_location_processing", {
+          locationCount: locations.length,
+          timestamp: new Date().toISOString(),
+        });
+
         for (const location of locations) {
-          console.log("Processing location:", location);
+          console.log("webhook.processing_location", {
+            location: location,
+            timestamp: new Date().toISOString(),
+          });
 
           // Check for overlapping projects at this location
           const { data: overlappingProjects, error: overlapError } =
@@ -320,6 +426,13 @@ app.post("/", async (req, res) => {
           }
 
           // Proceed with insertion
+          console.log("webhook.inserting_project", {
+            projectName,
+            developerName,
+            location,
+            timestamp: new Date().toISOString(),
+          });
+
           const { data, error } = await supabase.from("projects").insert({
             project_name: projectName,
             developer_name: developerName,
@@ -335,6 +448,12 @@ app.post("/", async (req, res) => {
 
           if (error) {
             console.error("Error saving project to database:", error);
+            console.log("webhook.project_insert_error", {
+              error: error.message,
+              code: error.code,
+              details: error.details,
+              timestamp: new Date().toISOString(),
+            });
 
             // Log the error
             try {
@@ -353,6 +472,11 @@ app.post("/", async (req, res) => {
         }
 
         // Update the checkout record to mark it as processed
+        console.log("webhook.updating_checkout_record", {
+          checkoutId,
+          timestamp: new Date().toISOString(),
+        });
+
         const { error: updateError } = await supabase
           .from("polar_checkouts")
           .update({ processed: true, processed_at: new Date().toISOString() })
@@ -411,7 +535,19 @@ app.post("/", async (req, res) => {
           console.error("Error logging webhook success:", logError);
         }
 
+        console.log("webhook.processing_completed_successfully", {
+          checkoutId,
+          timestamp: new Date().toISOString(),
+        });
+
         return res.status(200).json({ success: true });
+      } else {
+        console.log("webhook.payment_not_successful", {
+          type: payload.type,
+          state: payload.data.state,
+          status: payload.data.status,
+          timestamp: new Date().toISOString(),
+        });
       }
     }
 
@@ -419,9 +555,20 @@ app.post("/", async (req, res) => {
     console.log(`Processed webhook of type: ${payload.type}`);
 
     // Return a success response for other webhook types
+    console.log("webhook.unhandled_event_type", {
+      type: payload.type,
+      timestamp: new Date().toISOString(),
+    });
+
     return res.status(200).json({ received: true, eventType: payload.type });
   } catch (error) {
     console.error("Error processing webhook:", error);
+    console.log("webhook.unhandled_exception", {
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString(),
+    });
+
     return res.status(500).json({ error: error.message });
   }
 });
@@ -430,6 +577,12 @@ app.post("/", async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Polar webhook server running on port ${PORT}`);
+  console.log("webhook.server_started", {
+    port: PORT,
+    timestamp: new Date().toISOString(),
+    webhookUrl: "/polar-webhook",
+    webhookUrlWithSlash: "/polar-webhook/",
+  });
 });
 
 export default app;

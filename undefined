@@ -1,0 +1,11 @@
+import CurlCommandGenerator from "@/components/CurlCommandGenerator";
+import { Toaster } from "@/components/ui/toaster";
+
+export default function CurlCommandGeneratorStoryboard() {
+  return (
+    <div className="p-6 bg-gray-100 min-h-screen">
+      <CurlCommandGenerator />
+      <Toaster />
+    </div>
+  );
+}
