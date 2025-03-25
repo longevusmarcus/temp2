@@ -15,7 +15,7 @@ const StatsPanel = () => {
   // Fetch stats when component mounts
   useEffect(() => {
     fetchStats();
-  }, [fetchStats]);
+  }, []);
 
   // Calculate percentages for progress bars
   const purchasedPercentage =
