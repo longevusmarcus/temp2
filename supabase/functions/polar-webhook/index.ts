@@ -1,19 +1,50 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
-import { crypto } from "https://deno.land/std@0.177.0/crypto/mod.ts";
-import { encodeHex } from "https://deno.land/std@0.177.0/encoding/hex.ts";
+import { createClient } from "@supabase/supabase-js";
+import express from "express";
+import { Webhooks } from "@polar-sh/sdk/webhooks";
+import cors from "cors";
+import { handleSuccessfulPayment } from "./webhook-handler";
 
 // Get environment variables
-const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_KEY") || "";
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || "";
 const WEBHOOK_SECRET = "d07e6a6640f441949ad0fb00d6e43e8e";
 
-// Create Supabase client with detailed logging
+// Create Supabase client
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Log Supabase configuration (without exposing full keys)
 console.log("Polar webhook Supabase configuration:", {
   url: supabaseUrl ? `${supabaseUrl.substring(0, 10)}...` : "NOT SET",
   serviceKey: supabaseServiceKey ? "SET (masked)" : "NOT SET",
+});
+
+// Initialize Express app
+const app = express();
+
+// Configure middleware
+app.use(express.json());
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: [
+      "authorization",
+      "x-client-info",
+      "apikey",
+      "content-type",
+      "webhook-signature",
+    ],
+  }),
+);
+
+// Initialize Polar webhooks
+const webhooks = new Webhooks({
+  secret: WEBHOOK_SECRET,
+});
+
+// Handle preflight requests
+app.options("*", (req, res) => {
+  res.status(200).send("ok");
 });
 
 // Verify Supabase connection on startup
@@ -72,126 +103,38 @@ function getBlockDimensions(blockSize: string): {
   }
 }
 
-// Verify webhook signature - temporarily disabled for testing
-async function verifySignature(
-  request: Request,
-  payload: string,
-): Promise<boolean> {
-  // Temporarily return true to bypass signature verification during testing
-  return true;
-  /*
-  const signature = request.headers.get("webhook-signature");
-  if (!signature) {
-    console.error("No webhook signature found in headers");
-    return false;
-  }
-
-  // Parse the signature header
-  const [timestamp, signatureHash] = signature.split(",");
-  if (!timestamp || !signatureHash) {
-    console.error("Invalid signature format");
-    return false;
-  }
-
-  const timestampValue = timestamp.split("t=")[1];
-  const signatureValue = signatureHash.split("signature=")[1];
-
-  if (!timestampValue || !signatureValue) {
-    console.error("Invalid signature components");
-    return false;
-  }
-
-  // Check if the timestamp is within tolerance (5 minutes)
-  const timestampDate = new Date(parseInt(timestampValue) * 1000);
-  const now = new Date();
-  const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-
-  if (timestampDate < fiveMinutesAgo) {
-    console.error("Webhook timestamp too old");
-    return false;
-  }
-
-  // Create the signed payload
-  const signedPayload = `${timestampValue}.${payload}`;
-
-  // Convert the webhook secret to a crypto key
-  const encoder = new TextEncoder();
-  const secretKey = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(WEBHOOK_SECRET),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign", "verify"],
-  );
-
-  // Generate the expected signature
-  const signedData = await crypto.subtle.sign(
-    "HMAC",
-    secretKey,
-    encoder.encode(signedPayload),
-  );
-
-  const expectedSignature = encodeHex(new Uint8Array(signedData));
-
-  // Compare the signatures
-  return expectedSignature === signatureValue;
-  */
-}
-
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers":
-          "authorization, x-client-info, apikey, content-type, webhook-signature",
-      },
-    });
-  }
-
+// Main webhook endpoint
+app.post("/", async (req, res) => {
   try {
-    // Clone the request to read the body twice (once for verification, once for processing)
-    const clonedReq = req.clone();
-
-    // Get the raw payload as a string for signature verification
-    const rawPayload = await clonedReq.text();
+    // Get the raw payload and signature
+    const payload = req.body;
+    const signature = req.headers["webhook-signature"] as string;
 
     // Verify the webhook signature
-    const isValid = await verifySignature(req, rawPayload);
-
-    if (!isValid) {
-      console.error("Invalid webhook signature");
-      return new Response(JSON.stringify({ error: "Invalid signature" }), {
-        status: 401,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
+    let event;
+    try {
+      event = webhooks.verify(JSON.stringify(payload), signature);
+    } catch (err) {
+      console.error("Invalid webhook signature", err);
+      return res.status(401).json({ error: "Invalid signature" });
     }
 
-    // Parse the webhook payload with detailed logging
-    const payload = JSON.parse(rawPayload);
+    // Log the webhook event for debugging
     console.log("Received webhook:", JSON.stringify(payload));
     console.log("Webhook type:", payload.type);
     console.log("Webhook data:", JSON.stringify(payload.data));
 
-    // Log the webhook event for debugging
     try {
       await supabase.from("webhook_logs").insert({
         event_type: payload.type || "unknown",
         payload: payload,
-        headers: Object.fromEntries(req.headers.entries()),
+        headers: req.headers,
         status: "received",
       });
     } catch (logError) {
       console.error("Error logging webhook:", logError);
       // Continue processing even if logging fails
     }
-
-    // Verify the webhook is from Polar (you should implement proper verification)
-    // For production, you should verify the webhook signature
 
     // Handle various Polar webhook events
     if (
@@ -206,16 +149,7 @@ Deno.serve(async (req) => {
 
       if (!checkoutId) {
         console.error("No checkout ID in webhook payload");
-        return new Response(
-          JSON.stringify({ error: "No checkout ID provided" }),
-          {
-            status: 400,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
-          },
-        );
+        return res.status(400).json({ error: "No checkout ID provided" });
       }
 
       // Get the checkout session details with detailed error handling
@@ -286,29 +220,16 @@ Deno.serve(async (req) => {
 
         // If we still don't have checkout data, return error
         if (!checkoutData) {
-          return new Response(
-            JSON.stringify({
-              error: "Checkout not found",
-              details: checkoutError,
-              webhookType: payload.type,
-              checkoutId: checkoutId,
-            }),
-            {
-              status: 404,
-              headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-              },
-            },
-          );
+          return res.status(404).json({
+            error: "Checkout not found",
+            details: checkoutError,
+            webhookType: payload.type,
+            checkoutId: checkoutId,
+          });
         }
       }
 
       // Check if payment is successful
-      // Only process if payment is confirmed as successful
-      // For customer.state_changed, we check state === "active"
-      // For checkout.completed, we verify status === "completed" or "succeeded"
-      // For subscription events, we also verify they are in a paid state
       if (
         (payload.type === "customer.state_changed" &&
           payload.data.state === "active") ||
@@ -427,16 +348,7 @@ Deno.serve(async (req) => {
               console.error("Error logging webhook error:", logError);
             }
 
-            return new Response(
-              JSON.stringify({ error: "Failed to save project" }),
-              {
-                status: 500,
-                headers: {
-                  "Content-Type": "application/json",
-                  "Access-Control-Allow-Origin": "*",
-                },
-              },
-            );
+            return res.status(500).json({ error: "Failed to save project" });
           }
         }
 
@@ -499,13 +411,7 @@ Deno.serve(async (req) => {
           console.error("Error logging webhook success:", logError);
         }
 
-        return new Response(JSON.stringify({ success: true }), {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        });
+        return res.status(200).json({ success: true });
       }
     }
 
@@ -513,24 +419,17 @@ Deno.serve(async (req) => {
     console.log(`Processed webhook of type: ${payload.type}`);
 
     // Return a success response for other webhook types
-    return new Response(
-      JSON.stringify({ received: true, eventType: payload.type }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      },
-    );
+    return res.status(200).json({ received: true, eventType: payload.type });
   } catch (error) {
     console.error("Error processing webhook:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
+    return res.status(500).json({ error: error.message });
   }
 });
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Polar webhook server running on port ${PORT}`);
+});
+
+export default app;
