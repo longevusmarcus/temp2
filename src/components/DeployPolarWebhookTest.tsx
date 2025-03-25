@@ -28,6 +28,7 @@ const DeployPolarWebhookTest = () => {
   }>({ online: navigator.onLine });
   // Function to run detailed network diagnostics
   const runNetworkDiagnostics = async () => {
+    console.log("Running detailed network diagnostics...");
     try {
       const results = await Promise.allSettled([
         // Test general internet connectivity
@@ -270,6 +271,37 @@ const DeployPolarWebhookTest = () => {
           ...prev,
           message: `Network diagnostic issues detected: ${networkDiagnostics.message}`,
         }));
+
+        // Log additional information to help with debugging
+        console.log("Network diagnostic issues detected:", networkDiagnostics);
+        console.log("Current network status:", networkStatus);
+        console.log("Browser information:", navigator.userAgent);
+
+        // Try to ping the specific webhook URL to see if it's accessible
+        try {
+          const webhookUrl = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/polar-webhook/`;
+          console.log(`Testing direct access to webhook URL: ${webhookUrl}`);
+
+          const webhookResponse = await fetch(webhookUrl, {
+            method: "HEAD",
+            mode: "no-cors",
+            cache: "no-cache",
+            signal: AbortSignal.timeout(5000),
+          }).catch((err) => {
+            console.error(
+              `Error accessing webhook URL directly: ${err.message}`,
+            );
+            return null;
+          });
+
+          if (webhookResponse) {
+            console.log("Webhook URL is accessible in no-cors mode");
+          } else {
+            console.log("Webhook URL is NOT accessible even in no-cors mode");
+          }
+        } catch (error) {
+          console.error("Error testing webhook URL:", error);
+        }
       }
 
       // Wrap in timeout to prevent UI from hanging indefinitely
@@ -308,7 +340,7 @@ const DeployPolarWebhookTest = () => {
         errorMessage.includes("Network error")
       ) {
         errorMessage =
-          "Network connection issue detected. Please check your internet connection and ensure you can reach api.supabase.com. This could be due to firewall settings, VPN restrictions, or corporate network policies blocking the connection.";
+          "Network connection issue detected. Please check your internet connection and ensure you can reach api.supabase.com. This could be due to: 1) Missing SUPABASE_ACCESS_TOKEN environment variable - make sure it's set in your project settings, 2) Firewall settings, VPN restrictions, or corporate network policies blocking the connection, 3) CORS restrictions in your browser. Try using the built-in deployment panel instead of the CLI, or use a different network connection.";
       } else if (errorMessage.includes("timed out")) {
         errorMessage =
           "The request timed out. This could be due to slow internet connection or the Supabase API being temporarily overloaded. Try again when you have a more stable connection.";
@@ -597,10 +629,36 @@ const DeployPolarWebhookTest = () => {
                         </li>
                       )}
                       {deployResult.message.includes("Failed to fetch") && (
-                        <li>
-                          "Failed to fetch" typically indicates a network
-                          connectivity issue - check your firewall settings
-                        </li>
+                        <>
+                          <li className="flex items-start">
+                            <Shield className="h-3 w-3 text-gray-400 mt-0.5 mr-1" />
+                            <span>
+                              "Failed to fetch" typically indicates a network
+                              connectivity issue or CORS restriction
+                            </span>
+                          </li>
+                          <li className="flex items-start">
+                            <Shield className="h-3 w-3 text-gray-400 mt-0.5 mr-1" />
+                            <span>
+                              Try accessing the URL from a different network
+                              (e.g., mobile data instead of WiFi)
+                            </span>
+                          </li>
+                          <li className="flex items-start">
+                            <Shield className="h-3 w-3 text-gray-400 mt-0.5 mr-1" />
+                            <span>
+                              If using a corporate network, check if it blocks
+                              access to Supabase domains
+                            </span>
+                          </li>
+                          <li className="flex items-start">
+                            <Shield className="h-3 w-3 text-gray-400 mt-0.5 mr-1" />
+                            <span>
+                              Try using a different browser or incognito/private
+                              mode
+                            </span>
+                          </li>
+                        </>
                       )}
                       {deployResult.message.includes("Proxy") && (
                         <li>
@@ -645,17 +703,51 @@ const DeployPolarWebhookTest = () => {
                         Try using a different browser or device to rule out
                         browser-specific issues
                       </li>
-                      <li>
-                        <a
-                          href={`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/polar-webhook/`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:text-blue-300 underline"
-                        >
-                          Open your webhook URL directly
-                        </a>{" "}
-                        to check if it's accessible (should return a 405 Method
-                        Not Allowed for GET requests)
+                      <li className="flex items-start">
+                        <Globe className="h-3 w-3 text-gray-400 mt-0.5 mr-1" />
+                        <span>
+                          <a
+                            href={`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/polar-webhook/`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:text-blue-300 underline"
+                          >
+                            Open your webhook URL directly
+                          </a>{" "}
+                          to check if it's accessible (should return a 405
+                          Method Not Allowed for GET requests)
+                        </span>
+                      </li>
+                      <li className="flex items-start">
+                        <Globe className="h-3 w-3 text-gray-400 mt-0.5 mr-1" />
+                        <span>
+                          Try using a tool like{" "}
+                          <a
+                            href="https://reqbin.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:text-blue-300 underline"
+                          >
+                            ReqBin
+                          </a>{" "}
+                          or{" "}
+                          <a
+                            href="https://www.postman.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:text-blue-300 underline"
+                          >
+                            Postman
+                          </a>{" "}
+                          to test the URL from outside your browser
+                        </span>
+                      </li>
+                      <li className="flex items-start">
+                        <Server className="h-3 w-3 text-gray-400 mt-0.5 mr-1" />
+                        <span>
+                          Verify the webhook is properly deployed by checking
+                          the Supabase dashboard Edge Functions section
+                        </span>
                       </li>
                     </ul>
                   </div>

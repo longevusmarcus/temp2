@@ -38,6 +38,7 @@ app.use(
       "content-type",
       "webhook-signature",
     ],
+    credentials: true,
   }),
 );
 
@@ -54,7 +55,23 @@ app.options("*", (req, res) => {
     headers: req.headers,
     timestamp: new Date().toISOString(),
   });
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "authorization, x-client-info, apikey, content-type, webhook-signature",
+  );
   res.status(200).send("ok");
+});
+
+// Add a simple GET handler for testing connectivity
+app.get("/", (req, res) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.status(200).json({
+    status: "ok",
+    message: "Polar webhook is running",
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Verify Supabase connection on startup
@@ -580,8 +597,7 @@ app.listen(PORT, () => {
   console.log("webhook.server_started", {
     port: PORT,
     timestamp: new Date().toISOString(),
-    webhookUrl: "/polar-webhook",
-    webhookUrlWithSlash: "/polar-webhook/",
+    webhookUrl: "polar-webhook", // No path prefix, no trailing slash
   });
 });
 

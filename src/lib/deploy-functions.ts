@@ -64,6 +64,7 @@ export async function deployEdgeFunction(
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${supabaseServiceKey}`,
+          "X-Client-Info": "Tempo Web App",
         },
         body: JSON.stringify({
           name: functionName,
