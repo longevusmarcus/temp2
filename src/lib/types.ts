@@ -8,6 +8,7 @@ export interface PixelBlock {
   developerName: string;
   description: string;
   thumbnailUrl: string;
+  thumbnail_url?: string; // Add this field for compatibility with database
   websiteUrl: string;
   color: string;
   category: string;

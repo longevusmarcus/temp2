@@ -148,6 +148,10 @@ function PixelGrid({ blocks, gridSize = 1000000 }: PixelGridProps) {
                     block.thumbnailUrl || block.thumbnail_url
                       ? `url(${block.thumbnailUrl || block.thumbnail_url})`
                       : "none",
+                  // Debug image URL
+                  ...(block.thumbnailUrl || block.thumbnail_url
+                    ? { "data-image-url": "has-image" }
+                    : { "data-image-url": "no-image" }),
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                   backgroundRepeat: "no-repeat",

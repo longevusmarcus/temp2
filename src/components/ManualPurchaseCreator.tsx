@@ -121,11 +121,16 @@ const ManualPurchaseCreator = () => {
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
-      // Store the image URL (in a real app, you'd upload to storage)
+      // Store the image URL
+      const imageUrl = reader.result as string;
       setFormData((prev) => ({
         ...prev,
-        thumbnailUrl: reader.result as string,
+        thumbnailUrl: imageUrl,
       }));
+      console.log(
+        "Image uploaded and set to thumbnailUrl:",
+        imageUrl.substring(0, 50) + "...",
+      );
     };
     reader.readAsDataURL(file);
   };

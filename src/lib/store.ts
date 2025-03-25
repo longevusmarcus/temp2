@@ -41,7 +41,8 @@ export const useStore = create<StoreState>((set, get) => ({
         developerName: item.developer_name,
         description: item.description,
         websiteUrl: item.website_url,
-        thumbnailUrl: item.thumbnail_url,
+        thumbnailUrl: item.thumbnail_url || "", // Ensure thumbnailUrl is set from thumbnail_url
+        thumbnail_url: item.thumbnail_url || "", // Also keep the original field name for compatibility
         x: item.x,
         y: item.y,
         width: item.width,
@@ -126,6 +127,9 @@ export const useStore = create<StoreState>((set, get) => ({
       thumbnailUrl: purchaseData.projectDetails.thumbnail
         ? URL.createObjectURL(purchaseData.projectDetails.thumbnail)
         : "",
+      thumbnail_url: purchaseData.projectDetails.thumbnail
+        ? URL.createObjectURL(purchaseData.projectDetails.thumbnail)
+        : "", // Also set thumbnail_url for consistency
       x: location.x,
       y: location.y,
       width: blockSizeInfo.width,
