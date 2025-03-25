@@ -42,8 +42,8 @@ export const useStore = create<StoreState>((set, get) => ({
         description: item.description,
         websiteUrl: item.website_url,
         thumbnailUrl: item.thumbnail_url,
-        x: item.x_position,
-        y: item.y_position,
+        x: item.x,
+        y: item.y,
         width: item.width,
         height: item.height,
         color: item.color || "#6d28d9", // Default to purple if no color
@@ -76,13 +76,17 @@ export const useStore = create<StoreState>((set, get) => ({
       if (projectError) throw projectError;
 
       // Get sum of all pixel areas
-      const { data: pixelData, error: pixelError } = await supabase.rpc(
-        "calculate_total_pixels",
-      );
+      // Using a direct query instead of RPC function
+      const { data: pixelData, error: pixelError } = await supabase
+        .from("projects")
+        .select("width, height");
 
       if (pixelError) throw pixelError;
 
-      const purchasedPixels = pixelData || 0;
+      // Calculate total pixels manually
+      const purchasedPixels = pixelData
+        ? pixelData.reduce((sum, item) => sum + item.width * item.height, 0)
+        : 0;
       const totalPixels = 1000000; // 1000x1000 grid
       const availablePixels = totalPixels - purchasedPixels;
 
@@ -108,20 +112,27 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   addBlock: (purchaseData: PurchaseData) => {
+    // Extract the first location from the locations array
+    const location = purchaseData.locations[0];
+    // Get the block size info
+    const blockSizeInfo = BLOCK_SIZES[purchaseData.blockSize];
+
     const newBlock: PixelBlock = {
-      id: purchaseData.id,
-      projectName: purchaseData.projectName,
-      developerName: purchaseData.developerName,
-      description: purchaseData.description,
-      websiteUrl: purchaseData.websiteUrl,
-      thumbnailUrl: purchaseData.thumbnailUrl,
-      x: purchaseData.x,
-      y: purchaseData.y,
-      width: purchaseData.width,
-      height: purchaseData.height,
-      color: purchaseData.color || "#6d28d9", // Default to purple if no color
-      category: purchaseData.category || "Other",
-      email: purchaseData.email || "",
+      id: Math.random().toString(36).substring(2, 15), // Generate a random ID
+      projectName: purchaseData.projectDetails.projectName,
+      developerName: purchaseData.projectDetails.developerName,
+      description: purchaseData.projectDetails.description,
+      websiteUrl: purchaseData.projectDetails.websiteUrl,
+      thumbnailUrl: purchaseData.projectDetails.thumbnail
+        ? URL.createObjectURL(purchaseData.projectDetails.thumbnail)
+        : "",
+      x: location.x,
+      y: location.y,
+      width: blockSizeInfo.width,
+      height: blockSizeInfo.height,
+      color: "#6d28d9", // Default to purple
+      category: purchaseData.projectDetails.category || "Other",
+      email: purchaseData.projectDetails.email || "",
     };
 
     set((state) => ({
