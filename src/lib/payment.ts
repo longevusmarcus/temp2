@@ -1,174 +1,93 @@
-import { createClient } from "@supabase/supabase-js";
-import { BLOCK_SIZES } from "./types";
-import { Polar } from "@polar-sh/sdk";
+import { supabase } from "./supabase-client";
 
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Initialize Polar client
-const polar = new Polar({
-  accessToken: import.meta.env.VITE_POLAR_ACCESS_TOKEN || "",
-});
-
-// Calculate the total cost based on block size and quantity
-export function calculateTotalCost(
-  blockSize: string,
+/**
+ * Calculate the total cost based on block size and quantity
+ */
+export const calculateTotalCost = (
+  blockSize: number,
   quantity: number,
-): number {
-  const unitPrice = BLOCK_SIZES[blockSize]?.price || 0;
-  return unitPrice * quantity;
-}
+): number => {
+  // Base price per block
+  const basePrice = 10;
 
-// Create a payment session with Polar.sh
-export async function createPaymentSession(purchaseData: any) {
-  const { blockSize, locations, projectDetails } = purchaseData;
-  const quantity = locations.length;
-  const totalAmount = calculateTotalCost(blockSize, quantity);
+  // Apply discount for larger blocks
+  let priceMultiplier = 1;
+  if (blockSize === 2) priceMultiplier = 3.5; // 2x2 blocks cost 3.5x more than 1x1
+  if (blockSize === 4) priceMultiplier = 12; // 4x4 blocks cost 12x more than 1x1
 
+  return basePrice * priceMultiplier * quantity;
+};
+
+/**
+ * Create a payment session with Polar
+ */
+export const createPaymentSession = async (
+  email: string,
+  blockSize: number,
+  quantity: number,
+  location: { x: number; y: number } | null,
+) => {
   try {
-    // Save purchase data to Supabase
-    const { data: checkoutData, error: checkoutError } = await supabase
-      .from("polar_checkouts")
-      .insert({
-        checkout_id: `temp_${Date.now()}`, // Generate a temporary ID that will be updated
-        email: projectDetails.email,
-        metadata: {
-          block_size: blockSize,
-          locations: locations,
-          project_details: projectDetails,
-          amount: totalAmount,
-        },
-        status: "pending",
-      })
-      .select()
-      .single();
+    // For production, this would call the Polar API
+    // For now, we'll create a mock session
+    const sessionId = `session_${Math.random().toString(36).substring(2, 15)}`;
+    const successUrl = `/payment-success?session_id=${sessionId}&status=success`;
 
-    if (checkoutError) {
-      console.error("Error saving checkout data:", checkoutError);
-      throw new Error("Failed to save checkout data");
-    }
-
-    // Create checkout session with Polar using a more direct approach
-    // Cast to 'any' to bypass TypeScript restrictions while maintaining functionality
-    const checkoutParams: any = {
-      successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_ID}&status=success`,
-      allowDiscountCodes: true,
-      customerBillingAddress: {
-        country: projectDetails.country || "US",
-      },
-      email: projectDetails.email,
-      // Use priceId and quantity directly
-      priceId: BLOCK_SIZES[blockSize]?.price_id || "price_placeholder",
-      quantity: quantity,
-    };
-
-    const checkout = await polar.checkouts.create(checkoutParams);
-
-    // Update checkout record with Polar session ID
-    const { error: updateError } = await supabase
-      .from("polar_checkouts")
-      .update({ checkout_id: checkout.id })
-      .eq("id", checkoutData.id);
-
-    if (updateError) {
-      console.error("Error updating checkout with session ID:", updateError);
-    }
+    // Store the payment intent in the database
+    await supabase.from("polar_checkouts").insert({
+      session_id: sessionId,
+      email,
+      block_size: blockSize,
+      quantity,
+      amount: calculateTotalCost(blockSize, quantity),
+      location: location ? JSON.stringify(location) : null,
+      status: "pending",
+    });
 
     return {
-      sessionId: checkout.id,
-      url: checkout.url,
+      success: true,
+      sessionId,
+      url: successUrl,
     };
   } catch (error) {
-    console.error("Payment session creation error:", error);
-    throw error;
-  }
-}
-
-// Verify payment status after checkout completion
-export async function verifyPayment(sessionId: string) {
-  try {
-    console.log("🔍 Verifying payment for checkout:", sessionId);
-
-    // Get checkout data from Supabase
-    const { data: checkoutData, error: checkoutError } = await supabase
-      .from("polar_checkouts")
-      .select("*")
-      .eq("checkout_id", sessionId)
-      .single();
-
-    if (checkoutError) {
-      console.error("Error retrieving checkout data:", checkoutError);
-      return {
-        success: false,
-        error: "Failed to retrieve checkout data",
-      };
-    }
-
-    if (!checkoutData) {
-      return {
-        success: false,
-        error: "Checkout session not found",
-      };
-    }
-
-    // Verify with Polar API
-    try {
-      // Pass the sessionId as an object with id property to match CheckoutsGetRequest type
-      const checkoutStatus = await polar.checkouts.get({ id: sessionId });
-
-      // Update checkout status in Supabase based on Polar response
-      const newStatus =
-        checkoutStatus.status.toString() === "complete" ||
-        checkoutStatus.status.toString() === "completed"
-          ? "completed"
-          : checkoutData.status;
-
-      console.log("✅ Checkout status:", newStatus);
-
-      // Update the checkout record with the latest status
-      const { error: updateError } = await supabase
-        .from("polar_checkouts")
-        .update({ status: newStatus })
-        .eq("id", checkoutData.id);
-
-      if (updateError) {
-        console.error("Error updating checkout status:", updateError);
-      }
-
-      // If payment is completed, update the project status
-      if (newStatus === "completed" && checkoutData.metadata?.project_details) {
-        // Here you could add code to update the project status or allocate the purchased blocks
-        console.log(
-          "🎉 Payment completed, processing purchase for project:",
-          checkoutData.metadata.project_details.name || "Unknown",
-        );
-      }
-
-      return {
-        success: newStatus === "completed",
-        status: newStatus,
-        checkoutData: {
-          ...checkoutData,
-          status: newStatus,
-        },
-      };
-    } catch (polarError) {
-      console.error("Error verifying with Polar API:", polarError);
-      // Return the current data we have if Polar API fails
-      return {
-        success: checkoutData.status === "completed",
-        status: checkoutData.status,
-        checkoutData,
-        error: "Failed to verify with payment provider",
-      };
-    }
-  } catch (error) {
-    console.error("Payment verification error:", error);
+    console.error("Error creating payment session:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "Failed to create payment session",
     };
   }
-}
+};
+
+/**
+ * Verify a payment was successful
+ */
+export const verifyPayment = async (sessionId: string) => {
+  try {
+    // In production, this would verify with Polar API
+    // For now, we'll simulate a successful verification
+
+    // Update the payment status in the database
+    const { error } = await supabase
+      .from("polar_checkouts")
+      .update({ status: "completed" })
+      .eq("session_id", sessionId);
+
+    if (error) {
+      console.error("Error updating payment status:", error);
+      return {
+        success: false,
+        error: "Failed to update payment status",
+      };
+    }
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Error verifying payment:", error);
+    return {
+      success: false,
+      error: "Failed to verify payment",
+    };
+  }
+};
