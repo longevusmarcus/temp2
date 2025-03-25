@@ -11,6 +11,14 @@ const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 // This function would be called by a webhook handler when a payment is successful
 export const handleSuccessfulPayment = async (sessionData: any) => {
+  // Verify payment status is successful before proceeding
+  if (
+    !sessionData ||
+    (sessionData.status !== "completed" && sessionData.status !== "succeeded")
+  ) {
+    console.error("Payment not successful, aborting project creation");
+    return false;
+  }
   try {
     // Extract purchase data from the session metadata
     const metadata = sessionData.metadata || {};

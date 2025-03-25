@@ -305,14 +305,20 @@ Deno.serve(async (req) => {
       }
 
       // Check if payment is successful
+      // Only process if payment is confirmed as successful
       // For customer.state_changed, we check state === "active"
-      // For checkout.completed, we process it directly
-      // For subscription events, we also process them directly
+      // For checkout.completed, we verify status === "completed" or "succeeded"
+      // For subscription events, we also verify they are in a paid state
       if (
-        payload.data.state === "active" ||
-        payload.type === "checkout.completed" ||
-        payload.type === "subscription.created" ||
-        payload.type === "subscription.renewed"
+        (payload.type === "customer.state_changed" &&
+          payload.data.state === "active") ||
+        (payload.type === "checkout.completed" &&
+          (payload.data.status === "completed" ||
+            payload.data.status === "succeeded")) ||
+        (payload.type === "subscription.created" &&
+          payload.data.status === "active") ||
+        (payload.type === "subscription.renewed" &&
+          payload.data.status === "active")
       ) {
         // Extract purchase data from the checkout metadata
         const metadata = checkoutData.metadata || {};
