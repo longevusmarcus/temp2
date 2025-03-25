@@ -58,9 +58,10 @@ export async function createPaymentSession(purchaseData: any) {
       customerBillingAddress: {
         country: projectDetails.country || "US",
       },
-      items: [
+      // Note: Using lineItems instead of items to match Polar SDK type
+      lineItems: [
         {
-          id: BLOCK_SIZES[blockSize]?.price_id || "price_placeholder",
+          priceId: BLOCK_SIZES[blockSize]?.price_id || "price_placeholder",
           quantity,
         },
       ],
