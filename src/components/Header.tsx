@@ -63,7 +63,7 @@ const Header = ({
           </Button>
           <Button
             onClick={onPurchaseClick}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-full px-5 py-2 shadow-lg hover:shadow-purple-500/20 transition-all duration-300 font-medium"
           >
             <ShoppingCart className="h-4 w-4 mr-2" />
             Buy Pixels
@@ -103,13 +103,13 @@ const Header = ({
             >
               FAQ
             </a>
-            <button
+            <Button
               onClick={onPurchaseClick}
-              className="text-gray-300 hover:text-purple-400 transition-colors flex items-center mt-2"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-full px-5 py-2 shadow-lg hover:shadow-purple-500/20 transition-all duration-300 font-medium mt-2 w-full"
             >
-              <ShoppingCart className="h-4 w-4 mr-1" />
+              <ShoppingCart className="h-4 w-4 mr-2" />
               Buy Pixels
-            </button>
+            </Button>
           </nav>
         </div>
       )}
