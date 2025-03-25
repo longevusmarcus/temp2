@@ -129,37 +129,82 @@ const Home = () => {
             Featured Projects
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {pixelBlocks.slice(0, 3).map((block) => (
-              <div
-                key={block.id}
-                className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 shadow-lg hover:shadow-purple-900/20 transition-shadow"
-              >
-                <ProjectHoverCard
-                  projectName={block.projectName}
-                  developerName={block.developerName}
-                  description={block.description}
-                  websiteUrl={block.websiteUrl}
-                  thumbnailUrl={block.thumbnailUrl}
-                  blockSize={{ width: block.width, height: block.height }}
+            {/* Show actual projects if available, otherwise show placeholders */}
+            {(pixelBlocks.length >= 3
+              ? pixelBlocks.slice(0, 3)
+              : [
+                  // Placeholder projects
+                  {
+                    id: "placeholder-1",
+                    projectName: "Nebula AI Assistant",
+                    developerName: "Quantum Labs",
+                    description:
+                      "Revolutionary AI assistant that adapts to your workflow and learns from your habits. Powered by our proprietary neural network architecture.",
+                    websiteUrl: "https://example.com/nebula",
+                    thumbnailUrl:
+                      "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&q=80",
+                    width: 50,
+                    height: 50,
+                  },
+                  {
+                    id: "placeholder-2",
+                    projectName: "Hologram Social",
+                    developerName: "Future Interfaces Inc",
+                    description:
+                      "The world's first social platform with holographic avatars. Connect with friends in immersive 3D spaces that feel like real life.",
+                    websiteUrl: "https://example.com/hologram",
+                    thumbnailUrl:
+                      "https://images.unsplash.com/photo-1633412802994-5c058f151b66?w=800&q=80",
+                    width: 40,
+                    height: 40,
+                  },
+                  {
+                    id: "placeholder-3",
+                    projectName: "CryptoVerse Exchange",
+                    developerName: "Blockchain Pioneers",
+                    description:
+                      "Next-generation decentralized exchange with the lowest fees and fastest transaction speeds in the industry. Trade with confidence.",
+                    websiteUrl: "https://example.com/cryptoverse",
+                    thumbnailUrl:
+                      "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=800&q=80",
+                    width: 60,
+                    height: 30,
+                  },
+                  ...pixelBlocks,
+                ]
+            )
+              .slice(0, 3)
+              .map((block) => (
+                <div
+                  key={block.id}
+                  className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 shadow-lg hover:shadow-purple-900/20 transition-shadow"
                 >
-                  <div className="aspect-video w-full">
-                    <img
-                      src={block.thumbnailUrl}
-                      alt={block.projectName}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold text-purple-400">
-                      {block.projectName}
-                    </h3>
-                    <p className="text-sm text-gray-400 mt-1">
-                      by {block.developerName}
-                    </p>
-                  </div>
-                </ProjectHoverCard>
-              </div>
-            ))}
+                  <ProjectHoverCard
+                    projectName={block.projectName}
+                    developerName={block.developerName}
+                    description={block.description}
+                    websiteUrl={block.websiteUrl}
+                    thumbnailUrl={block.thumbnailUrl}
+                    blockSize={{ width: block.width, height: block.height }}
+                  >
+                    <div className="aspect-video w-full">
+                      <img
+                        src={block.thumbnailUrl}
+                        alt={block.projectName}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-lg font-semibold text-purple-400">
+                        {block.projectName}
+                      </h3>
+                      <p className="text-sm text-gray-400 mt-1">
+                        by {block.developerName}
+                      </p>
+                    </div>
+                  </ProjectHoverCard>
+                </div>
+              ))}
           </div>
         </section>
 

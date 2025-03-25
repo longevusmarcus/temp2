@@ -61,6 +61,27 @@ export function FAQ() {
             support needs.
           </AccordionContent>
         </AccordionItem>
+
+        <AccordionItem value="item-6">
+          <AccordionTrigger>
+            What happens after the grid is complete?
+          </AccordionTrigger>
+          <AccordionContent>
+            Once the grid is complete, two exciting things will happen:
+            <br />
+            <br />
+            <strong>NFT Minting:</strong> The entire grid will become mintable
+            as a unique NFT, allowing participants and collectors to own a
+            lasting digital piece of this collaborative project.
+            <br />
+            <br />
+            <strong>Community Investment:</strong> 33% of the generated revenue
+            will be reinvested directly into three different projects featured
+            on the grid. These projects will be democratically selected by the
+            community, empowering participants to support initiatives they're
+            passionate about.
+          </AccordionContent>
+        </AccordionItem>
       </Accordion>
     </div>
   );
