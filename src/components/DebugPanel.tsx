@@ -2,7 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
-import { RefreshCw, Search, Mail, ExternalLink, MapPin } from "lucide-react";
+import {
+  RefreshCw,
+  Search,
+  Mail,
+  ExternalLink,
+  MapPin,
+  Trash2,
+} from "lucide-react";
 import { useStore } from "@/lib/store";
 import { createClient } from "@supabase/supabase-js";
 import { testPolarApi } from "@/lib/polar";
@@ -24,6 +31,8 @@ const DebugPanel = () => {
   const [polarError, setPolarError] = useState<string | null>(null);
   const [foundPixels, setFoundPixels] = useState<PixelBlock[]>([]);
   const [pixelSearchLoading, setPixelSearchLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [projectIdToDelete, setProjectIdToDelete] = useState("");
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
@@ -417,6 +426,72 @@ const DebugPanel = () => {
       );
     } finally {
       setPixelSearchLoading(false);
+    }
+  };
+
+  // Handle deleting a specific project by ID
+  const handleDeleteProject = async () => {
+    if (!projectIdToDelete) return;
+
+    setDeleteLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", projectIdToDelete);
+
+      if (error) throw error;
+
+      // Refresh the grid and pixel search
+      await fetchStats();
+      if (email) {
+        await handleFindPixels();
+      }
+
+      setError(`Successfully deleted project with ID: ${projectIdToDelete}`);
+      setProjectIdToDelete("");
+    } catch (err) {
+      console.error("Error deleting project:", err);
+      setError(
+        `Error deleting project: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // Handle deleting all projects
+  const handleDeleteAllProjects = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to delete ALL projects? This cannot be undone!",
+      )
+    ) {
+      return;
+    }
+
+    setDeleteLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.from("projects").delete().neq("id", 0); // This will delete all projects
+
+      if (error) throw error;
+
+      // Refresh the grid and pixel search
+      await fetchStats();
+      setFoundPixels([]);
+
+      setError("Successfully deleted all projects");
+    } catch (err) {
+      console.error("Error deleting all projects:", err);
+      setError(
+        `Error deleting all projects: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -869,6 +944,45 @@ const DebugPanel = () => {
             )}
           </div>
 
+          <div className="pt-2 border-t border-gray-700">
+            <p className="text-sm text-gray-400 mb-2">Delete Projects</p>
+            <div className="space-y-2">
+              <div className="flex space-x-2">
+                <Input
+                  value={projectIdToDelete}
+                  onChange={(e) => setProjectIdToDelete(e.target.value)}
+                  placeholder="Enter project ID to delete"
+                  className="bg-gray-800 border-gray-700"
+                />
+                <Button
+                  onClick={handleDeleteProject}
+                  disabled={deleteLoading || !projectIdToDelete}
+                  size="icon"
+                  variant="destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+              <Button
+                onClick={handleDeleteAllProjects}
+                disabled={deleteLoading}
+                variant="destructive"
+                className="w-full"
+              >
+                {deleteLoading ? (
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                Delete ALL Projects
+              </Button>
+              <p className="text-xs text-red-400 mt-1">
+                Warning: This will permanently delete all projects from the
+                database.
+              </p>
+            </div>
+          </div>
+
           {foundPixels.length > 0 && (
             <div className="pt-2 border-t border-gray-700 mt-4">
               <h4 className="font-medium text-purple-300 mb-2">
@@ -888,6 +1002,9 @@ const DebugPanel = () => {
                       <span className="font-medium text-white">
                         {pixel.projectName}
                       </span>
+                      <span className="text-xs text-gray-400 ml-auto">
+                        ID: {pixel.id}
+                      </span>
                     </div>
                     <div className="text-xs text-gray-300 space-y-1">
                       <p>
@@ -902,16 +1019,29 @@ const DebugPanel = () => {
                         <span className="text-gray-400">Developer:</span>{" "}
                         {pixel.developerName}
                       </p>
-                      {pixel.websiteUrl && (
-                        <a
-                          href={pixel.websiteUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300"
+                      <div className="flex justify-between items-center mt-2">
+                        {pixel.websiteUrl && (
+                          <a
+                            href={pixel.websiteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300"
+                          >
+                            Visit <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                        <Button
+                          onClick={() => {
+                            setProjectIdToDelete(pixel.id.toString());
+                            handleDeleteProject();
+                          }}
+                          size="sm"
+                          variant="destructive"
+                          className="h-6 text-xs"
                         >
-                          Visit <ExternalLink className="h-3 w-3" />
-                        </a>
-                      )}
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
