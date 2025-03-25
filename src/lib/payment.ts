@@ -67,7 +67,8 @@ export const createPaymentSession = async (
     const checkout = await polar.checkouts.create({
       productId,
       successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_ID}&status=success`,
-      cancelUrl: `${window.location.origin}/payment-cancel`,
+      // Changed cancelUrl to returnUrl to match Polar API
+      returnUrl: `${window.location.origin}/payment-cancel`,
       customerEmail: email,
       metadata: {
         blockSize,
@@ -85,8 +86,9 @@ export const createPaymentSession = async (
     console.log("Checkout URL:", checkout.url);
 
     // Store the payment intent in the database
+    // Changed session_id to checkout_id to match the database schema
     await supabase.from("polar_checkouts").insert({
-      session_id: checkout.id,
+      checkout_id: checkout.id,
       email,
       block_size: blockSize,
       quantity,
@@ -124,10 +126,11 @@ export const verifyPayment = async (sessionId: string) => {
       );
 
       // Update the payment status in the database
+      // Changed session_id to checkout_id to match the database schema
       const { error } = await supabase
         .from("polar_checkouts")
         .update({ status: "completed" })
-        .eq("session_id", sessionId);
+        .eq("checkout_id", sessionId);
 
       if (error) {
         console.error("Error updating payment status:", error);
@@ -156,10 +159,11 @@ export const verifyPayment = async (sessionId: string) => {
 
       if (isCompleted) {
         // Update the payment status in the database
+        // Changed session_id to checkout_id to match the database schema
         const { error } = await supabase
           .from("polar_checkouts")
           .update({ status: "completed" })
-          .eq("session_id", sessionId);
+          .eq("checkout_id", sessionId);
 
         if (error) {
           console.error("Error updating payment status:", error);
@@ -183,10 +187,11 @@ export const verifyPayment = async (sessionId: string) => {
       console.error("Error fetching checkout from Polar:", polarError);
 
       // Check if we can find the checkout in our database
+      // Changed session_id to checkout_id to match the database schema
       const { data: checkoutData, error: dbError } = await supabase
         .from("polar_checkouts")
         .select("*")
-        .eq("session_id", sessionId)
+        .eq("checkout_id", sessionId)
         .single();
 
       if (dbError) {
