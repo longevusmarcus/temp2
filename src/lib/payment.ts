@@ -9,7 +9,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Initialize Polar client
 const polar = new Polar({
-  accessToken: import.meta.env.VITE_POLAR_ACCESS_TOKEN as string,
+  accessToken: import.meta.env.VITE_POLAR_ACCESS_TOKEN || "",
 });
 
 // Calculate the total cost based on block size and quantity
@@ -53,7 +53,10 @@ export async function createPaymentSession(purchaseData: any) {
     // Create checkout session with Polar
     const checkout = await polar.checkouts.create({
       successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_ID}&status=success`,
-      // Use the correct property name according to Polar SDK
+      allowDiscountCodes: true,
+      customerBillingAddress: {
+        country: projectDetails.country || "US",
+      },
       items: [
         {
           id: BLOCK_SIZES[blockSize]?.price_id || "price_placeholder",
