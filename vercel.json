@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build-no-errors",
+  "buildCommand": "chmod +x vercel-build.sh && ./vercel-build.sh",
   "outputDirectory": "dist",
   "framework": "vite",
   "env": {
@@ -10,5 +10,8 @@
     "SUPABASE_PROJECT_ID": "${SUPABASE_PROJECT_ID}",
     "SUPABASE_SERVICE_KEY": "${SUPABASE_SERVICE_KEY}"
   },
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "routes": [
+    { "src": "/(.*)", "dest": "/" }
+  ]
 }

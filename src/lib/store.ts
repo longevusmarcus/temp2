@@ -121,7 +121,7 @@ export const useStore = create(
                 thumbnailUrl: project.thumbnail_url || "",
                 websiteUrl: project.website_url || "",
                 color: project.color || getRandomColor(),
-                category: project.category || "",
+                category: (project as any).category || "",
               }))
             : [];
 
@@ -350,7 +350,7 @@ export const useStore = create(
                   thumbnailUrl: project.thumbnail_url || "",
                   websiteUrl: project.website_url || "",
                   color: project.color || getRandomColor(),
-                  category: project.category || "",
+                  category: (project as any).category || "",
                 }));
 
                 return foundBlocks;
@@ -372,7 +372,7 @@ export const useStore = create(
                 thumbnailUrl: project.thumbnail_url || "",
                 websiteUrl: project.website_url || "",
                 color: project.color || getRandomColor(),
-                category: project.category || "",
+                category: (project as any).category || "",
               }))
             : [];
 
