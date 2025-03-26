@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
@@ -8,10 +9,12 @@ import {
   CheckCircle,
   Loader2,
   Database,
+  Key,
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase-client";
 
-export default function DatabasePermissionFixer() {
+export default function CombinedConnectionTester() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     success: boolean;
@@ -19,66 +22,64 @@ export default function DatabasePermissionFixer() {
     details?: string;
   } | null>(null);
 
-  const fixPermissions = async () => {
+  const testConnection = async () => {
     setLoading(true);
     setResult(null);
 
     try {
-      // Create a direct client with environment variables or hardcoded credentials as fallback
-      const supabaseUrl =
-        import.meta.env.VITE_SUPABASE_URL ||
-        "https://mbqihswchccmvqmjlpwq.supabase.co";
-      const supabaseKey =
-        import.meta.env.VITE_SUPABASE_ANON_KEY ||
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icWloc3djaGNjbXZxbWpscHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTM0MzY4MDAsImV4cCI6MjAwOTAxMjgwMH0.qmO3KXHzgZZM_pVlnEqjwfXZUlSXYtXfTj7yfzwmHUo";
+      console.log("Testing connection with supabase client...");
 
-      console.log("DatabasePermissionFixer using URL:", supabaseUrl);
-      console.log(
-        "DatabasePermissionFixer using Key (first 10 chars):",
-        supabaseKey.substring(0, 10) + "...",
-      );
-
-      const supabase = createClient(supabaseUrl, supabaseKey);
-
-      // Test if we can query the webhook_logs table
-      const { data: logsData, error: logsError } = await supabase
+      // Test with the client
+      const { data: testData, error: testError } = await supabase
         .from("webhook_logs")
-        .select("*")
+        .select("count(*)")
         .limit(1);
 
-      // Test if we can query the projects table
-      const { data: projectsData, error: projectsError } = await supabase
+      console.log("webhook_logs test result:", {
+        data: testData,
+        error: testError,
+      });
+
+      // Try a simple query to check if the projects table exists
+      const { data: tableData, error: tableError } = await supabase
         .from("projects")
-        .select("*")
+        .select("count(*)")
         .limit(1);
+
+      console.log("projects test result:", {
+        data: tableData,
+        error: tableError,
+      });
 
       // Try the test_api_key function
       const { data: apiKeyData, error: apiKeyError } =
         await supabase.rpc("test_api_key");
 
-      // Collect all errors
-      const errors = [];
-      if (logsError) errors.push(`Webhook logs: ${logsError.message}`);
-      if (projectsError) errors.push(`Projects: ${projectsError.message}`);
-      if (apiKeyError) errors.push(`API Key test: ${apiKeyError.message}`);
+      console.log("test_api_key result:", {
+        data: apiKeyData,
+        error: apiKeyError,
+      });
 
-      if (errors.length > 0) {
-        setResult({
-          success: false,
-          message: "Still having permission issues with some tables",
-          details: errors.join("\n"),
-        });
-      } else {
-        setResult({
-          success: true,
-          message: "Successfully accessed all tables and functions",
-          details: `Webhook logs: ${logsData?.length ?? 0} rows\nProjects: ${projectsData?.length ?? 0} rows\nAPI Key test: ${apiKeyData}`,
-        });
-      }
+      // Try a simple query with a different approach
+      const { data: directData, error: directError } = await supabase
+        .from("webhook_logs")
+        .select("*")
+        .limit(1);
+
+      console.log("direct query result:", {
+        data: directData,
+        error: directError,
+      });
+
+      setResult({
+        success: !testError || !tableError || !directError,
+        message: "Connection testing completed",
+        details: `Webhook Logs Test: ${testError ? "❌ " + testError.message : "✅ Working"}\n\nProjects Table: ${tableError ? "❌ " + tableError.message : "✅ Working"}\n\nAPI Key Test: ${apiKeyError ? "❌ " + apiKeyError.message : "✅ Working"}\n\nDirect Query: ${directError ? "❌ " + directError.message : "✅ Working"}\n\nTest Data: ${JSON.stringify(testData)}\n\nTable Data: ${JSON.stringify(tableData)}\n\nAPI Key Data: ${JSON.stringify(apiKeyData)}\n\nDirect Data: ${JSON.stringify(directData)}`,
+      });
     } catch (error) {
       setResult({
         success: false,
-        message: "Error testing database permissions",
+        message: "Error testing connection",
         details: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -90,16 +91,15 @@ export default function DatabasePermissionFixer() {
     <Card className="w-full bg-gray-900 border-gray-800 text-white shadow-lg">
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-purple-400">
-          Database Permission Fixer
+          Supabase Connection Tester
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <Alert className="bg-blue-900/30 border-blue-800">
           <Info className="h-4 w-4 text-blue-400 mt-0.5 mr-2" />
           <AlertDescription className="text-sm">
-            This tool tests if your database permissions have been fixed. The
-            SQL migration has been run to create tables and grant proper
-            permissions.
+            This tool tests your Supabase connection using a simplified client
+            approach. It checks both the webhook_logs and projects tables.
           </AlertDescription>
         </Alert>
 
@@ -133,40 +133,37 @@ export default function DatabasePermissionFixer() {
         )}
 
         <Button
-          onClick={fixPermissions}
+          onClick={testConnection}
           disabled={loading}
           className="bg-purple-600 hover:bg-purple-700 w-full"
         >
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Testing Permissions...
+              Testing Connection...
             </>
           ) : (
             <>
               <Database className="mr-2 h-4 w-4" />
-              Test Database Permissions
+              Test Supabase Connection
             </>
           )}
         </Button>
 
         <div className="space-y-2 mt-4">
           <div className="font-medium text-sm text-gray-300">
-            Database Information:
+            Troubleshooting Tips:
           </div>
           <div className="p-3 bg-gray-800 rounded-md text-sm">
-            <p className="mb-1">• Using direct connection with anon key</p>
+            <p className="mb-1">• Make sure your Supabase project is active</p>
             <p className="mb-1">
-              • Tables have been created with proper structure
+              • Check if your API keys have been rotated recently
             </p>
             <p className="mb-1">
-              • Row Level Security (RLS) has been disabled on all tables
+              • Verify that the webhook_logs table exists and has proper
+              permissions
             </p>
-            <p className="mb-1">
-              • Permissions have been granted to anon, authenticated, and
-              service_role
-            </p>
-            <p>• Tables have been added to the realtime publication</p>
+            <p>• Try restarting your development server</p>
           </div>
         </div>
       </CardContent>

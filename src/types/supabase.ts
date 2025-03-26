@@ -337,27 +337,24 @@ export type Database = {
       webhook_logs: {
         Row: {
           created_at: string | null
-          error: string | null
+          error_message: string | null
           event_type: string | null
-          headers: Json | null
           id: string
           payload: Json | null
           status: string | null
         }
         Insert: {
           created_at?: string | null
-          error?: string | null
+          error_message?: string | null
           event_type?: string | null
-          headers?: Json | null
           id?: string
           payload?: Json | null
           status?: string | null
         }
         Update: {
           created_at?: string | null
-          error?: string | null
+          error_message?: string | null
           event_type?: string | null
-          headers?: Json | null
           id?: string
           payload?: Json | null
           status?: string | null
@@ -373,10 +370,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      test_api_key: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       test_insert_permission: {
         Args: {
           table_name: string
         }
+        Returns: boolean
+      }
+      test_service_key_permissions: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
     }

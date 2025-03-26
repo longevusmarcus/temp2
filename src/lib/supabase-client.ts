@@ -22,14 +22,27 @@ const isValidUrl = (urlString: string): boolean => {
 const HARDCODED_SERVICE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icWloc3djaGNjbXZxbWpscHdxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5MzQzNjgwMCwiZXhwIjoyMDA5MDEyODAwfQ.Ow-_JWmWlNm8gVMdPVoLbXNUoaUxKtU_cOIp-cNVxDM";
 
+// Hardcoded anon key as fallback
+const HARDCODED_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icWloc3djaGNjbXZxbWpscHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTM0MzY4MDAsImV4cCI6MjAwOTAxMjgwMH0.qmO3KXHzgZZM_pVlnEqjwfXZUlSXYtXfTj7yfzwmHUo";
+
 // Function to get the Supabase client instance
 export const getSupabase = () => {
   // Check global instance first
 
-  // Use environment variables for the Supabase URL and anon key
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-  // Always use the hardcoded service key to ensure consistent connection
-  const supabaseKey = HARDCODED_SERVICE_KEY;
+  // Use environment variables with hardcoded fallbacks
+  const supabaseUrl =
+    import.meta.env.VITE_SUPABASE_URL ||
+    "https://mbqihswchccmvqmjlpwq.supabase.co";
+  const supabaseKey =
+    import.meta.env.VITE_SUPABASE_ANON_KEY || HARDCODED_ANON_KEY;
+
+  // Log the actual keys being used (first 10 chars only for security)
+  console.log("Using Supabase URL:", supabaseUrl);
+  console.log(
+    "Using Supabase Key (first 10 chars):",
+    supabaseKey.substring(0, 10) + "...",
+  );
 
   // Log environment variable status for debugging
   console.log("Initializing Supabase singleton client with service key:", {
