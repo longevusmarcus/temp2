@@ -89,19 +89,7 @@ const Header = ({
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="fixed inset-0 bg-gray-900 z-50 p-4 md:hidden">
-          <div className="flex justify-between items-center mb-8">
-            <span className="text-xl font-bold text-white">Menu</span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={toggleMenu}
-              className="text-white border-white hover:bg-gray-800 hover:text-white"
-              aria-label="Close menu"
-            >
-              <X className="h-6 w-6" />
-            </Button>
-          </div>
+        <div className="fixed inset-0 bg-gray-900 z-50 pt-20 p-4 md:hidden">
           <nav className="flex flex-col space-y-6 items-center text-center">
             <a
               href="/"

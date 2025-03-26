@@ -157,27 +157,27 @@ export default function ResponsivePurchaseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full sm:max-w-[425px] md:max-w-[600px] max-h-[90vh] overflow-y-auto p-3 sm:p-6 bg-background">
+      <DialogContent className="sm:max-w-[425px] md:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">
-            Purchase Pixel Blocks
+            Purchase a Pixel Block
           </DialogTitle>
         </DialogHeader>
 
-        <div className="mt-2 sm:mt-4">
+        <div className="mt-4">
           {/* Progress indicator */}
-          <div className="flex justify-between mb-4">
+          <div className="flex justify-between mb-6">
             {[1, 2, 3, 4].map((s) => (
               <div
                 key={s}
                 className={`flex flex-col items-center ${s <= step ? "text-primary" : "text-gray-400"}`}
               >
                 <div
-                  className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center mb-1 text-xs sm:text-sm ${s <= step ? "bg-primary text-white" : "bg-gray-200 text-gray-500"}`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${s <= step ? "bg-primary text-white" : "bg-gray-200 text-gray-500"}`}
                 >
                   {s}
                 </div>
-                <span className="text-[10px] sm:text-xs">
+                <span className="text-xs hidden sm:inline">
                   {s === 1
                     ? "Size"
                     : s === 2
@@ -193,22 +193,22 @@ export default function ResponsivePurchaseDialog({
           {renderStepContent()}
 
           {step < 4 && (
-            <div className="flex justify-between mt-4 sm:mt-6">
+            <div className="flex justify-between mt-6">
               <Button
                 variant="outline"
                 onClick={prevStep}
                 disabled={step === 1}
-                className="w-[45%] sm:w-24 text-sm"
+                className="w-24"
               >
-                <ChevronLeft className="mr-1 h-3 w-3 sm:h-4 sm:w-4" /> Back
+                <ChevronLeft className="mr-1 h-4 w-4" /> Back
               </Button>
 
               <Button
                 onClick={nextStep}
                 disabled={isNextDisabled()}
-                className="w-[45%] sm:w-24 text-sm"
+                className="w-24"
               >
-                Next <ChevronRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
+                Next <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
           )}
