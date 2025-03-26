@@ -21,23 +21,43 @@ const supabaseUrl =
   Deno.env.get("PROJECT_URL") ||
   "https://mbqihswchccmvqmjlpwq.supabase.co";
 
+// Ensure we have a service key with multiple fallbacks
+// Prioritize SUPABASE_SERVICE_ROLE_KEY as it's what the user has set in Tempo
 const supabaseServiceKey =
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
   Deno.env.get("SERVICE_ROLE_KEY") ||
   Deno.env.get("VITE_SUPABASE_SERVICE_KEY") ||
-  Deno.env.get("SUPABASE_SERVICE_KEY");
+  Deno.env.get("SUPABASE_SERVICE_KEY") ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icWloc3djaGNjbXZxbWpscHdxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5MzQyMDk2MCwiZXhwIjoyMDA4OTk2OTYwfQ.placeholder";
 
 // Log environment variables for debugging (masked for security)
 console.log("Environment variables in edge function:", {
   supabaseUrl: supabaseUrl ? `${supabaseUrl.substring(0, 8)}...` : "not set",
   supabaseServiceKey: supabaseServiceKey ? "set (masked)" : "not set",
   envVars: Object.keys(Deno.env.toObject()),
+  hasServiceRoleKey: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
 });
 
-// Throw an error if credentials are missing
-if (!supabaseServiceKey) {
-  console.error(
-    "Supabase service key is missing, using hardcoded placeholder for testing",
+// Log if we're using the fallback service key
+if (
+  !Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") &&
+  !Deno.env.get("SERVICE_ROLE_KEY") &&
+  !Deno.env.get("VITE_SUPABASE_SERVICE_KEY") &&
+  !Deno.env.get("SUPABASE_SERVICE_KEY")
+) {
+  console.warn(
+    "Supabase service key not found in environment variables, using fallback key for testing",
+  );
+} else {
+  console.log(
+    "Using environment variable for Supabase service key: " +
+      (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+        ? "SUPABASE_SERVICE_ROLE_KEY"
+        : Deno.env.get("SERVICE_ROLE_KEY")
+          ? "SERVICE_ROLE_KEY"
+          : Deno.env.get("VITE_SUPABASE_SERVICE_KEY")
+            ? "VITE_SUPABASE_SERVICE_KEY"
+            : "SUPABASE_SERVICE_KEY"),
   );
 }
 
@@ -53,20 +73,12 @@ try {
     throw new Error("Supabase URL is missing");
   }
 
-  // If service key is missing, use a hardcoded placeholder for testing
-  const finalServiceKey =
-    supabaseServiceKey ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icWloc3djaGNjbXZxbWpscHdxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5MzQyMDk2MCwiZXhwIjoyMDA4OTk2OTYwfQ.placeholder";
-
-  if (!supabaseServiceKey) {
-    console.warn(
-      "WARNING: Using placeholder service key - this is for testing only!",
-    );
-  }
-
   // Create client with explicit string type conversion
-  supabase = createClient(String(supabaseUrl), String(finalServiceKey));
-  console.log("Supabase client created successfully");
+  supabase = createClient(String(supabaseUrl), String(supabaseServiceKey));
+  console.log(
+    "Supabase client created successfully with URL:",
+    supabaseUrl.substring(0, 8) + "...",
+  );
 } catch (error) {
   console.error("Error creating Supabase client:", error);
   throw new Error(`Failed to initialize Supabase client: ${error.message}`);
