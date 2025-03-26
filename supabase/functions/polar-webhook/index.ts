@@ -9,8 +9,12 @@ const corsHeaders = {
 };
 
 // Get environment variables with fallbacks
+// Try both regular and VITE_ prefixed variables
 const supabaseUrl =
-  Deno.env.get("SUPABASE_URL") || "https://mbqihswchccmvqmjlpwq.supabase.co";
+  Deno.env.get("SUPABASE_URL") ||
+  Deno.env.get("VITE_SUPABASE_URL") ||
+  "https://mbqihswchccmvqmjlpwq.supabase.co";
+
 const supabaseServiceKey =
   Deno.env.get("SUPABASE_SERVICE_KEY") ||
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
@@ -20,16 +24,30 @@ const supabaseServiceKey =
 const WEBHOOK_SECRET =
   Deno.env.get("WEBHOOK_SECRET") || "d07e6a6640f441949ad0fb00d6e43e8e";
 
+// Log all available environment variables for debugging
 console.log("Supabase URL:", supabaseUrl ? "Found" : "Not found");
 console.log(
   "Supabase Service Key:",
   supabaseServiceKey ? "Found" : "Not found",
 );
-console.log("Environment variables:", {
+
+// Check all possible environment variables
+console.log("Environment variables check:", {
+  SUPABASE_URL: Deno.env.get("SUPABASE_URL") ? "Found" : "Not found",
+  VITE_SUPABASE_URL: Deno.env.get("VITE_SUPABASE_URL") ? "Found" : "Not found",
   SUPABASE_SERVICE_KEY: Deno.env.get("SUPABASE_SERVICE_KEY")
     ? "Found"
     : "Not found",
   SUPABASE_SERVICE_ROLE_KEY: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+    ? "Found"
+    : "Not found",
+  VITE_SUPABASE_ANON_KEY: Deno.env.get("VITE_SUPABASE_ANON_KEY")
+    ? "Found"
+    : "Not found",
+  VITE_SUPABASE_PROJECT_ID: Deno.env.get("VITE_SUPABASE_PROJECT_ID")
+    ? "Found"
+    : "Not found",
+  POLAR_ACCESS_TOKEN: Deno.env.get("POLAR_ACCESS_TOKEN")
     ? "Found"
     : "Not found",
 });
@@ -66,6 +84,19 @@ Deno.serve(async (req) => {
 
   // Handle webhook POST requests
   if (req.method === "POST") {
+    // Log environment variables again in the POST handler for verification
+    console.log("POST handler - Environment variables check:", {
+      SUPABASE_URL: Deno.env.get("SUPABASE_URL") ? "Found" : "Not found",
+      VITE_SUPABASE_URL: Deno.env.get("VITE_SUPABASE_URL")
+        ? "Found"
+        : "Not found",
+      SUPABASE_SERVICE_KEY: Deno.env.get("SUPABASE_SERVICE_KEY")
+        ? "Found"
+        : "Not found",
+      SUPABASE_SERVICE_ROLE_KEY: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+        ? "Found"
+        : "Not found",
+    });
     try {
       const payload = await req.json();
       const signature = req.headers.get("webhook-signature") || "";
