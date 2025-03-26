@@ -256,6 +256,8 @@ export async function deployPolarWebhook(): Promise<{
         SUPABASE_SERVICE_KEY: import.meta.env.VITE_SUPABASE_SERVICE_KEY,
         VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
         VITE_SUPABASE_SERVICE_KEY: import.meta.env.VITE_SUPABASE_SERVICE_KEY,
+        SUPABASE_SERVICE_ROLE_KEY: import.meta.env.VITE_SUPABASE_SERVICE_KEY, // Add this alias
+        SERVICE_ROLE_KEY: import.meta.env.VITE_SUPABASE_SERVICE_KEY, // Add this alias
       },
     );
 

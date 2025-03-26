@@ -8,11 +8,13 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
-// Get environment variables properly
+// Get environment variables properly with fallbacks
 const supabaseUrl =
   Deno.env.get("SUPABASE_URL") ||
   Deno.env.get("VITE_SUPABASE_URL") ||
-  Deno.env.get("PROJECT_URL");
+  Deno.env.get("PROJECT_URL") ||
+  "https://mbqihswchccmvqmjlpwq.supabase.co"; // Hardcoded fallback
+
 const supabaseServiceKey =
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
   Deno.env.get("SERVICE_ROLE_KEY") ||
@@ -25,9 +27,17 @@ console.log("Environment variables in edge function:", {
   supabaseServiceKey: supabaseServiceKey ? "set (masked)" : "not set",
 });
 
+// Log all available environment variables (without values for security)
+console.log(
+  "Available environment variables:",
+  Object.keys(Deno.env.toObject()),
+);
+
 // Throw an error if credentials are missing
 if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error("Supabase credentials not found");
+  throw new Error(
+    `Supabase credentials not found: URL=${!!supabaseUrl}, Key=${!!supabaseServiceKey}`,
+  );
 }
 
 const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") || "changeme-in-prod";
@@ -35,8 +45,24 @@ const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") || "changeme-in-prod";
 // Create Supabase client with proper error handling
 let supabase;
 try {
-  console.log("Creating Supabase client with URL and key");
-  supabase = createClient(supabaseUrl, supabaseServiceKey);
+  // Log the first few characters of credentials for debugging
+  console.log("Creating Supabase client with credentials:", {
+    url: supabaseUrl ? `${supabaseUrl.substring(0, 8)}...` : "MISSING",
+    key: supabaseServiceKey
+      ? `${supabaseServiceKey.substring(0, 5)}...`
+      : "MISSING",
+  });
+
+  // Explicitly check for missing credentials
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error(
+      `Missing Supabase credentials: ${!supabaseUrl ? "URL" : ""} ${!supabaseServiceKey ? "Service Key" : ""}`,
+    );
+  }
+
+  // Create client with explicit string type conversion
+  supabase = createClient(String(supabaseUrl), String(supabaseServiceKey));
+  console.log("Supabase client created successfully");
 } catch (error) {
   console.error("Error creating Supabase client:", error);
   throw new Error(`Failed to initialize Supabase client: ${error.message}`);
