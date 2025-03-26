@@ -79,13 +79,18 @@ const PixelGrid = ({ blocks = [], gridSize = 1000 }: PixelGridProps) => {
     setZoomLevel(newZoom);
   };
 
+  // Log blocks for debugging
+  useEffect(() => {
+    console.log("PixelGrid received blocks:", blocks.length, blocks);
+  }, [blocks]);
+
   return (
     <div
       ref={containerRef}
       className="relative w-full h-full overflow-hidden bg-gray-900 cursor-move"
     >
       {/* Zoom controls */}
-      <div className="absolute top-4 right-4 z-20 bg-gray-800 rounded-md p-2 flex flex-col gap-2">
+      <div className="absolute top-4 right-4 z-10 bg-gray-800 rounded-md p-2 flex flex-col gap-2 md:z-20">
         <button
           className={`px-2 py-1 rounded-sm text-xs ${zoomLevel === 0.2 ? "bg-purple-600" : "bg-gray-700 hover:bg-gray-600"}`}
           onClick={() => handleZoomChange(0.2)}

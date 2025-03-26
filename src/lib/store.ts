@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { supabase } from "./supabase-client";
+import { supabase } from "./supabase-client-fixed";
 import { PixelBlock, PurchaseData, BLOCK_SIZES } from "./types";
 
 interface StoreState {
@@ -32,7 +32,12 @@ export const useStore = create<StoreState>((set, get) => ({
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching pixel blocks:", error);
+        throw error;
+      }
+
+      console.log("Fetched projects data:", data);
 
       // Transform the data to match our PixelBlock type
       const blocks: PixelBlock[] = data.map((item) => ({
@@ -61,7 +66,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
   fetchStats: async () => {
     // Enhanced guard to prevent multiple simultaneous fetches
-    if (get().isFetchingStats || get().isLoading) {
+    if (get().isFetchingStats) {
       console.log("Stats fetch already in progress, skipping...");
       return;
     }
@@ -74,15 +79,24 @@ export const useStore = create<StoreState>((set, get) => ({
         .from("projects")
         .select("*", { count: "exact", head: true });
 
-      if (projectError) throw projectError;
+      if (projectError) {
+        console.error("Error fetching project count:", projectError);
+        throw projectError;
+      }
+
+      console.log("Project count:", projectCount);
 
       // Get sum of all pixel areas
-      // Using a direct query instead of RPC function
       const { data: pixelData, error: pixelError } = await supabase
         .from("projects")
         .select("width, height");
 
-      if (pixelError) throw pixelError;
+      if (pixelError) {
+        console.error("Error fetching pixel data:", pixelError);
+        throw pixelError;
+      }
+
+      console.log("Pixel data:", pixelData);
 
       // Calculate total pixels manually
       const purchasedPixels = pixelData
@@ -103,12 +117,14 @@ export const useStore = create<StoreState>((set, get) => ({
         purchasedPixels,
         availablePixels,
         totalPixels,
-        isLoading: false,
         isFetchingStats: false,
       });
+
+      // After updating stats, fetch the blocks
+      get().fetchPixelBlocks();
     } catch (error) {
       console.error("Error fetching stats:", error);
-      set({ isLoading: false, isFetchingStats: false });
+      set({ isFetchingStats: false });
     }
   },
 
@@ -142,5 +158,15 @@ export const useStore = create<StoreState>((set, get) => ({
     set((state) => ({
       pixelBlocks: [newBlock, ...state.pixelBlocks],
     }));
+
+    // Force a refresh of stats after adding a block
+    setTimeout(() => {
+      get().fetchStats();
+    }, 1000);
   },
 }));
+
+// Initialize by fetching stats when the store is first created
+setTimeout(() => {
+  useStore.getState().fetchStats();
+}, 1000);

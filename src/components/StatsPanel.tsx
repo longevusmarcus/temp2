@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { useStore } from "../lib/store";
 import { Card } from "./ui/card";
 import { Progress } from "./ui/progress";
@@ -12,16 +12,19 @@ const StatsPanel = () => {
     fetchStats,
   } = useStore();
 
-  // Use ref to ensure fetch only happens once
-  const hasFetchedRef = useRef(false);
-
-  // Fetch stats when component mounts, but only once
+  // Fetch stats when component mounts
   useEffect(() => {
-    if (!hasFetchedRef.current) {
+    console.log("StatsPanel mounted, fetching stats...");
+    fetchStats();
+
+    // Set up an interval to refresh stats every 30 seconds
+    const intervalId = setInterval(() => {
+      console.log("Refreshing stats from interval...");
       fetchStats();
-      hasFetchedRef.current = true;
-    }
-  }, []); // Empty dependency array ensures it runs only once
+    }, 30000);
+
+    return () => clearInterval(intervalId);
+  }, [fetchStats]); // Include fetchStats in dependency array
 
   // Calculate percentages for progress bars
   const purchasedPercentage =
