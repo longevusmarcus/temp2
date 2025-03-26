@@ -1,11 +1,5 @@
 -- Fix permissions for tables that are having access issues with anonymous access
 
--- Enable RLS on tables
-ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE polar_checkouts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE webhook_logs ENABLE ROW LEVEL SECURITY;
-
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Allow anonymous access to projects" ON projects;
 DROP POLICY IF EXISTS "Allow anonymous access to polar_checkouts" ON polar_checkouts;
@@ -37,9 +31,3 @@ GRANT SELECT ON projects TO anon;
 GRANT SELECT ON polar_checkouts TO anon;
 GRANT SELECT ON customers TO anon;
 GRANT SELECT ON webhook_logs TO anon;
-
--- Enable realtime for these tables
-ALTER PUBLICATION supabase_realtime ADD TABLE projects;
-ALTER PUBLICATION supabase_realtime ADD TABLE polar_checkouts;
-ALTER PUBLICATION supabase_realtime ADD TABLE customers;
-ALTER PUBLICATION supabase_realtime ADD TABLE webhook_logs;
