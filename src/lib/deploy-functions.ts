@@ -34,24 +34,6 @@ export async function deployEdgeFunction(
   functionCode: string,
   envVars?: Record<string, string>,
 ): Promise<{ success: boolean; message: string; data?: any }> {
-  // Add default environment variables if not provided
-  const defaultEnvVars = {
-    SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-    SUPABASE_SERVICE_KEY:
-      import.meta.env.VITE_SUPABASE_SERVICE_KEY ||
-      import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
-    SUPABASE_SERVICE_ROLE_KEY:
-      import.meta.env.SUPABASE_SERVICE_ROLE_KEY ||
-      import.meta.env.VITE_SUPABASE_SERVICE_KEY,
-    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-    VITE_SUPABASE_SERVICE_KEY: import.meta.env.VITE_SUPABASE_SERVICE_KEY,
-    VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
-    VITE_SUPABASE_PROJECT_ID: import.meta.env.VITE_SUPABASE_PROJECT_ID,
-    SUPABASE_PROJECT_ID: import.meta.env.VITE_SUPABASE_PROJECT_ID,
-  };
-
-  // Merge default env vars with provided ones
-  envVars = { ...defaultEnvVars, ...envVars };
   try {
     console.log(`Deploying edge function: ${functionName}`);
 
@@ -271,20 +253,11 @@ export async function deployPolarWebhook(): Promise<{
       functionCodeWithEnvComment,
       {
         SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-        SUPABASE_SERVICE_KEY:
-          import.meta.env.VITE_SUPABASE_SERVICE_KEY ||
-          import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
+        SUPABASE_SERVICE_KEY: import.meta.env.VITE_SUPABASE_SERVICE_KEY,
         VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
         VITE_SUPABASE_SERVICE_KEY: import.meta.env.VITE_SUPABASE_SERVICE_KEY,
-        SUPABASE_SERVICE_ROLE_KEY:
-          import.meta.env.SUPABASE_SERVICE_ROLE_KEY ||
-          import.meta.env.VITE_SUPABASE_SERVICE_KEY,
-        SERVICE_ROLE_KEY:
-          import.meta.env.SUPABASE_SERVICE_ROLE_KEY ||
-          import.meta.env.VITE_SUPABASE_SERVICE_KEY,
-        SUPABASE_PROJECT_ID: import.meta.env.VITE_SUPABASE_PROJECT_ID,
-        VITE_SUPABASE_PROJECT_ID: import.meta.env.VITE_SUPABASE_PROJECT_ID,
-        VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        SUPABASE_SERVICE_ROLE_KEY: import.meta.env.VITE_SUPABASE_SERVICE_KEY, // Add this alias
+        SERVICE_ROLE_KEY: import.meta.env.VITE_SUPABASE_SERVICE_KEY, // Add this alias
       },
     );
 

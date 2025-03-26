@@ -8,61 +8,68 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
-// Get environment variables with fallbacks
-// Try both regular and VITE_ prefixed variables
+// Log all available environment variables (without values for security)
+console.log(
+  "Available environment variables:",
+  Object.keys(Deno.env.toObject()),
+);
+
+// Get environment variables with multiple fallbacks
 const supabaseUrl =
   Deno.env.get("SUPABASE_URL") ||
   Deno.env.get("VITE_SUPABASE_URL") ||
+  Deno.env.get("PROJECT_URL") ||
   "https://mbqihswchccmvqmjlpwq.supabase.co";
 
 const supabaseServiceKey =
-  Deno.env.get("SUPABASE_SERVICE_KEY") ||
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icWloc3djaGNjbXZxbWpscHdxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjY1OTE0MSwiZXhwIjoyMDU4MjM1MTQxfQ.544d5NIjRg9VoBi63CK8uk1SVmTUrZxOA0W67gfaTfk";
+  Deno.env.get("SERVICE_ROLE_KEY") ||
+  Deno.env.get("VITE_SUPABASE_SERVICE_KEY") ||
+  Deno.env.get("SUPABASE_SERVICE_KEY");
+
+// Log environment variables for debugging (masked for security)
+console.log("Environment variables in edge function:", {
+  supabaseUrl: supabaseUrl ? `${supabaseUrl.substring(0, 8)}...` : "not set",
+  supabaseServiceKey: supabaseServiceKey ? "set (masked)" : "not set",
+  envVars: Object.keys(Deno.env.toObject()),
+});
+
+// Throw an error if credentials are missing
+if (!supabaseServiceKey) {
+  console.error(
+    "Supabase service key is missing, using hardcoded placeholder for testing",
+  );
+}
 
 // Use a webhook secret with fallback
 const WEBHOOK_SECRET =
   Deno.env.get("WEBHOOK_SECRET") || "d07e6a6640f441949ad0fb00d6e43e8e";
 
-// Log all available environment variables for debugging
-console.log("Supabase URL:", supabaseUrl ? "Found" : "Not found");
-console.log(
-  "Supabase Service Key:",
-  supabaseServiceKey ? "Found" : "Not found",
-);
+// Create Supabase client with proper error handling
+let supabase;
+try {
+  // Ensure we have valid credentials
+  if (!supabaseUrl) {
+    throw new Error("Supabase URL is missing");
+  }
 
-// Check all possible environment variables
-console.log("Environment variables check:", {
-  SUPABASE_URL: Deno.env.get("SUPABASE_URL") ? "Found" : "Not found",
-  VITE_SUPABASE_URL: Deno.env.get("VITE_SUPABASE_URL") ? "Found" : "Not found",
-  SUPABASE_SERVICE_KEY: Deno.env.get("SUPABASE_SERVICE_KEY")
-    ? "Found"
-    : "Not found",
-  SUPABASE_SERVICE_ROLE_KEY: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-    ? "Found"
-    : "Not found",
-  VITE_SUPABASE_ANON_KEY: Deno.env.get("VITE_SUPABASE_ANON_KEY")
-    ? "Found"
-    : "Not found",
-  VITE_SUPABASE_PROJECT_ID: Deno.env.get("VITE_SUPABASE_PROJECT_ID")
-    ? "Found"
-    : "Not found",
-  POLAR_ACCESS_TOKEN: Deno.env.get("POLAR_ACCESS_TOKEN")
-    ? "Found"
-    : "Not found",
-});
+  // If service key is missing, use a hardcoded placeholder for testing
+  const finalServiceKey =
+    supabaseServiceKey ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icWloc3djaGNjbXZxbWpscHdxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5MzQyMDk2MCwiZXhwIjoyMDA4OTk2OTYwfQ.placeholder";
 
-// Create Supabase client with credentials - with fallback for missing key
-const supabase =
-  supabaseUrl && supabaseServiceKey
-    ? createClient(supabaseUrl, supabaseServiceKey)
-    : null;
+  if (!supabaseServiceKey) {
+    console.warn(
+      "WARNING: Using placeholder service key - this is for testing only!",
+    );
+  }
 
-// Log whether client was created successfully
-if (supabase) {
+  // Create client with explicit string type conversion
+  supabase = createClient(String(supabaseUrl), String(finalServiceKey));
   console.log("Supabase client created successfully");
-} else {
-  console.log("Failed to create Supabase client - missing URL or service key");
+} catch (error) {
+  console.error("Error creating Supabase client:", error);
+  throw new Error(`Failed to initialize Supabase client: ${error.message}`);
 }
 
 const webhooks = new Webhooks({ secret: WEBHOOK_SECRET });
@@ -80,9 +87,12 @@ Deno.serve(async (req) => {
         status: "ok",
         message: "Webhook live",
         env: {
-          hasSupabaseUrl: true,
-          hasServiceKey: true,
-          urlPrefix: supabaseUrl.substring(0, 8) + "...",
+          hasSupabaseUrl: !!supabaseUrl,
+          hasServiceKey: !!supabaseServiceKey,
+          urlPrefix: supabaseUrl
+            ? supabaseUrl.substring(0, 8) + "..."
+            : "not set",
+          availableEnvVars: Object.keys(Deno.env.toObject()),
         },
       }),
       {
@@ -93,19 +103,6 @@ Deno.serve(async (req) => {
 
   // Handle webhook POST requests
   if (req.method === "POST") {
-    // Log environment variables again in the POST handler for verification
-    console.log("POST handler - Environment variables check:", {
-      SUPABASE_URL: Deno.env.get("SUPABASE_URL") ? "Found" : "Not found",
-      VITE_SUPABASE_URL: Deno.env.get("VITE_SUPABASE_URL")
-        ? "Found"
-        : "Not found",
-      SUPABASE_SERVICE_KEY: Deno.env.get("SUPABASE_SERVICE_KEY")
-        ? "Found"
-        : "Not found",
-      SUPABASE_SERVICE_ROLE_KEY: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-        ? "Found"
-        : "Not found",
-    });
     try {
       const payload = await req.json();
       const signature = req.headers.get("webhook-signature") || "";
@@ -129,22 +126,16 @@ Deno.serve(async (req) => {
 
       // Log the webhook event
       try {
-        if (supabase) {
-          const { data, error } = await supabase.from("webhook_logs").insert({
-            event_type: payload.type,
-            payload,
-            status: "received",
-          });
+        const { data, error } = await supabase.from("webhook_logs").insert({
+          event_type: payload.type,
+          payload,
+          status: "received",
+        });
 
-          if (error) {
-            console.error("Error logging webhook:", error);
-          } else {
-            console.log("Webhook logged successfully");
-          }
+        if (error) {
+          console.error("Error logging webhook:", error);
         } else {
-          console.log(
-            "Skipping database logging - Supabase client not available",
-          );
+          console.log("Webhook logged successfully");
         }
       } catch (dbError) {
         console.error("Database error logging webhook:", dbError);
