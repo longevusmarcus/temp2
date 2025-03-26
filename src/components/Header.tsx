@@ -20,7 +20,7 @@ const Header = ({
   };
 
   return (
-    <header className="w-full h-20 border-b border-gray-800 text-white flex items-center justify-between px-4 md:px-8 z-10">
+    <header className="w-full h-20 border-b border-gray-800 text-white flex items-center justify-between px-4 md:px-8 z-20 relative">
       {/* Logo and Title */}
       <div className="flex items-center">
         <a
@@ -89,23 +89,23 @@ const Header = ({
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="absolute top-20 left-0 right-0 border-b border-gray-800 p-4 md:hidden">
-          <nav className="flex flex-col space-y-4">
+        <div className="fixed inset-0 bg-gray-900 z-50 pt-20 p-4 md:hidden">
+          <nav className="flex flex-col space-y-6 items-center text-center">
             <a
               href="/"
-              className="text-gray-300 hover:text-purple-400 transition-colors"
+              className="text-gray-300 hover:text-purple-400 transition-colors text-xl"
             >
               Home
             </a>
             <a
               href="/faq"
-              className="text-gray-300 hover:text-purple-400 transition-colors"
+              className="text-gray-300 hover:text-purple-400 transition-colors text-xl"
             >
               FAQ
             </a>
             <Button
               onClick={onPurchaseClick}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-full px-5 py-2 shadow-lg hover:shadow-purple-500/20 transition-all duration-300 font-medium mt-2 w-full"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-full px-5 py-2 shadow-lg hover:shadow-purple-500/20 transition-all duration-300 font-medium mt-4 w-full max-w-xs"
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
               Buy Pixels
