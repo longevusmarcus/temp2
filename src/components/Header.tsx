@@ -77,8 +77,7 @@ const Header = ({
           variant="ghost"
           size="icon"
           onClick={toggleMenu}
-          className="text-gray-300 hover:text-white hover:bg-gray-800 p-2"
-          aria-label="Open menu"
+          className="text-gray-300 hover:text-white hover:bg-gray-800"
         >
           {isMenuOpen ? (
             <X className="h-6 w-6" />
@@ -97,7 +96,7 @@ const Header = ({
               variant="outline"
               size="icon"
               onClick={toggleMenu}
-              className="text-white border-2 border-white hover:bg-gray-700 hover:text-white shadow-lg"
+              className="text-white border-white hover:bg-gray-800 hover:text-white"
               aria-label="Close menu"
             >
               <X className="h-6 w-6" />
