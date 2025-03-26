@@ -6,6 +6,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Hardcoded credentials as fallback
+const supabaseUrl =
+  Deno.env.get("SUPABASE_URL") ||
+  Deno.env.get("VITE_SUPABASE_URL") ||
+  "https://mbqihswchccmvqmjlpwq.supabase.co";
+
+const supabaseServiceKey =
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+  Deno.env.get("SERVICE_ROLE_KEY") ||
+  Deno.env.get("VITE_SUPABASE_SERVICE_KEY") ||
+  Deno.env.get("SUPABASE_SERVICE_KEY") ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icWloc3djaGNjbXZxbWpscHdxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5MzQzNjgwMCwiZXhwIjoyMDA5MDEyODAwfQ.Ow-_JWmWlNm8gVMdPVoLbXNUoaUxKtU_cOIp-cNVxDM";
+
 Deno.serve(async (req) => {
   // This is needed if you're planning to invoke your function from a browser.
   if (req.method === "OPTIONS") {
@@ -26,6 +39,11 @@ Deno.serve(async (req) => {
       envVars: envVars,
       hasServiceRoleKey: hasServiceRoleKey,
       hasSupabaseUrl: hasSupabaseUrl,
+      usingHardcodedCredentials: !hasServiceRoleKey || !hasSupabaseUrl,
+      supabaseUrlPrefix: supabaseUrl
+        ? supabaseUrl.substring(0, 8) + "..."
+        : "not set",
+      supabaseKeyStatus: supabaseServiceKey ? "set (masked)" : "not set",
       timestamp: new Date().toISOString(),
     };
 

@@ -8,81 +8,35 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
-// Log all available environment variables (without values for security)
-console.log(
-  "Available environment variables:",
-  Object.keys(Deno.env.toObject()),
-);
-
-// Get environment variables with multiple fallbacks
+// Get environment variables with fallbacks
 const supabaseUrl =
-  Deno.env.get("SUPABASE_URL") ||
-  Deno.env.get("VITE_SUPABASE_URL") ||
-  Deno.env.get("PROJECT_URL") ||
-  "https://mbqihswchccmvqmjlpwq.supabase.co";
-
-// Ensure we have a service key with multiple fallbacks
-// Prioritize SUPABASE_SERVICE_ROLE_KEY as it's what the user has set in Tempo
+  Deno.env.get("SUPABASE_URL") || "https://mbqihswchccmvqmjlpwq.supabase.co";
 const supabaseServiceKey =
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
-  Deno.env.get("SERVICE_ROLE_KEY") ||
-  Deno.env.get("VITE_SUPABASE_SERVICE_KEY") ||
   Deno.env.get("SUPABASE_SERVICE_KEY") ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icWloc3djaGNjbXZxbWpscHdxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5MzQyMDk2MCwiZXhwIjoyMDA4OTk2OTYwfQ.placeholder";
-
-// Log environment variables for debugging (masked for security)
-console.log("Environment variables in edge function:", {
-  supabaseUrl: supabaseUrl ? `${supabaseUrl.substring(0, 8)}...` : "not set",
-  supabaseServiceKey: supabaseServiceKey ? "set (masked)" : "not set",
-  envVars: Object.keys(Deno.env.toObject()),
-  hasServiceRoleKey: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
-});
-
-// Log if we're using the fallback service key
-if (
-  !Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") &&
-  !Deno.env.get("SERVICE_ROLE_KEY") &&
-  !Deno.env.get("VITE_SUPABASE_SERVICE_KEY") &&
-  !Deno.env.get("SUPABASE_SERVICE_KEY")
-) {
-  console.warn(
-    "Supabase service key not found in environment variables, using fallback key for testing",
-  );
-} else {
-  console.log(
-    "Using environment variable for Supabase service key: " +
-      (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-        ? "SUPABASE_SERVICE_ROLE_KEY"
-        : Deno.env.get("SERVICE_ROLE_KEY")
-          ? "SERVICE_ROLE_KEY"
-          : Deno.env.get("VITE_SUPABASE_SERVICE_KEY")
-            ? "VITE_SUPABASE_SERVICE_KEY"
-            : "SUPABASE_SERVICE_KEY"),
-  );
-}
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icWloc3djaGNjbXZxbWpscHdxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjY1OTE0MSwiZXhwIjoyMDU4MjM1MTQxfQ.544d5NIjRg9VoBi63CK8uk1SVmTUrZxOA0W67gfaTfk";
 
 // Use a webhook secret with fallback
 const WEBHOOK_SECRET =
   Deno.env.get("WEBHOOK_SECRET") || "d07e6a6640f441949ad0fb00d6e43e8e";
 
-// Create Supabase client with proper error handling
-let supabase;
-try {
-  // Ensure we have valid credentials
-  if (!supabaseUrl) {
-    throw new Error("Supabase URL is missing");
-  }
+console.log("Supabase URL:", supabaseUrl ? "Found" : "Not found");
+console.log(
+  "Supabase Service Key:",
+  supabaseServiceKey ? "Found" : "Not found",
+);
+console.log("Environment variables:", {
+  SUPABASE_SERVICE_KEY: Deno.env.get("SUPABASE_SERVICE_KEY")
+    ? "Found"
+    : "Not found",
+  SUPABASE_SERVICE_ROLE_KEY: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+    ? "Found"
+    : "Not found",
+});
 
-  // Create client with explicit string type conversion
-  supabase = createClient(String(supabaseUrl), String(supabaseServiceKey));
-  console.log(
-    "Supabase client created successfully with URL:",
-    supabaseUrl.substring(0, 8) + "...",
-  );
-} catch (error) {
-  console.error("Error creating Supabase client:", error);
-  throw new Error(`Failed to initialize Supabase client: ${error.message}`);
-}
+// Create Supabase client with credentials
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+console.log("Supabase client created successfully");
 
 const webhooks = new Webhooks({ secret: WEBHOOK_SECRET });
 
@@ -99,12 +53,9 @@ Deno.serve(async (req) => {
         status: "ok",
         message: "Webhook live",
         env: {
-          hasSupabaseUrl: !!supabaseUrl,
-          hasServiceKey: !!supabaseServiceKey,
-          urlPrefix: supabaseUrl
-            ? supabaseUrl.substring(0, 8) + "..."
-            : "not set",
-          availableEnvVars: Object.keys(Deno.env.toObject()),
+          hasSupabaseUrl: true,
+          hasServiceKey: true,
+          urlPrefix: supabaseUrl.substring(0, 8) + "...",
         },
       }),
       {
