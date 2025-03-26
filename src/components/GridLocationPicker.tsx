@@ -3,15 +3,19 @@ import { Location, BlockSize, PixelBlock, BLOCK_SIZES } from "../lib/types";
 import { useStore } from "../lib/store";
 
 interface GridLocationPickerProps {
-  onSelectLocations: (locations: Location[]) => void;
+  onSelectLocations?: (locations: Location[]) => void;
+  onLocationSelect?: (location: Location) => void;
   selectedLocations: Location[];
   blockSize: BlockSize;
+  availableLocations?: Location[];
 }
 
 export function GridLocationPicker({
   onSelectLocations,
+  onLocationSelect,
   selectedLocations,
   blockSize,
+  availableLocations: propAvailableLocations,
 }: GridLocationPickerProps) {
   const { pixelBlocks } = useStore();
   const [grid, setGrid] = useState<
@@ -48,19 +52,21 @@ export function GridLocationPicker({
       const row: Array<{ x: number; y: number; isOccupied: boolean }> = [];
       for (let x = 0; x < gridSize; x++) {
         // Check if this cell is occupied by any existing block
-        const isOccupied = pixelBlocks.some(
-          (block) =>
-            x >= block.x &&
-            x < block.x + block.width &&
-            y >= block.y &&
-            y < block.y + block.height,
-        );
+        const isOccupied = propAvailableLocations
+          ? !propAvailableLocations.some((loc) => loc.x === x && loc.y === y)
+          : pixelBlocks.some(
+              (block) =>
+                x >= block.x &&
+                x < block.x + block.width &&
+                y >= block.y &&
+                y < block.y + block.height,
+            );
         row.push({ x, y, isOccupied });
       }
       newGrid.push(row);
     }
     setGrid(newGrid);
-  }, [pixelBlocks, blockSize]);
+  }, [pixelBlocks, blockSize, propAvailableLocations]);
 
   // Function to check if a location is valid for selection
   const isValidLocation = (
@@ -104,23 +110,35 @@ export function GridLocationPicker({
       (loc) => loc.x === blockStartX && loc.y === blockStartY,
     );
 
-    if (isBlockSelected) {
-      // Remove the entire block
-      onSelectLocations(
-        selectedLocations.filter(
-          (loc) => !(loc.x === blockStartX && loc.y === blockStartY),
-        ),
-      );
-    } else {
-      // Check if the location is valid for selection
-      if (
-        isValidLocation(blockStartX, blockStartY, gridUnitWidth, gridUnitHeight)
-      ) {
-        // Add the block (just store the top-left corner with the block size info)
-        onSelectLocations([
-          ...selectedLocations,
-          { x: blockStartX, y: blockStartY },
-        ]);
+    // Handle both API patterns
+    if (onLocationSelect) {
+      // ResponsivePurchaseDialog pattern
+      onLocationSelect({ x: blockStartX, y: blockStartY });
+    } else if (onSelectLocations) {
+      // Original pattern
+      if (isBlockSelected) {
+        // Remove the entire block
+        onSelectLocations(
+          selectedLocations.filter(
+            (loc) => !(loc.x === blockStartX && loc.y === blockStartY),
+          ),
+        );
+      } else {
+        // Check if the location is valid for selection
+        if (
+          isValidLocation(
+            blockStartX,
+            blockStartY,
+            gridUnitWidth,
+            gridUnitHeight,
+          )
+        ) {
+          // Add the block (just store the top-left corner with the block size info)
+          onSelectLocations([
+            ...selectedLocations,
+            { x: blockStartX, y: blockStartY },
+          ]);
+        }
       }
     }
   };

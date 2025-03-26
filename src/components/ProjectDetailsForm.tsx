@@ -14,17 +14,31 @@ import {
 } from "./ui/select";
 
 interface ProjectDetailsFormProps {
-  initialValues: ProjectDetails;
-  onSubmit: (details: ProjectDetails) => void;
-  onCancel: () => void;
+  initialValues?: ProjectDetails;
+  onSubmit?: (details: ProjectDetails) => void;
+  onCancel?: () => void;
+  details?: ProjectDetails;
+  onChange?: (details: ProjectDetails) => void;
 }
 
 export function ProjectDetailsForm({
   initialValues,
   onSubmit,
   onCancel,
+  details,
+  onChange,
 }: ProjectDetailsFormProps) {
-  const [formData, setFormData] = useState<ProjectDetails>(initialValues);
+  const [formData, setFormData] = useState<ProjectDetails>(
+    initialValues ||
+      details || {
+        name: "",
+        description: "",
+        contactEmail: "",
+        website: "",
+        image: null,
+        category: "Web App",
+      },
+  );
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,10 +46,15 @@ export function ProjectDetailsForm({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
+    const updatedData = {
+      ...formData,
       [name]: value,
-    }));
+    };
+    setFormData(updatedData);
+
+    if (onChange) {
+      onChange(updatedData);
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,10 +68,15 @@ export function ProjectDetailsForm({
       reader.readAsDataURL(file);
 
       // Update form data with the file
-      setFormData((prev) => ({
-        ...prev,
+      const updatedData = {
+        ...formData,
         image: file,
-      }));
+      };
+      setFormData(updatedData);
+
+      if (onChange) {
+        onChange(updatedData);
+      }
     }
   };
 
@@ -62,7 +86,21 @@ export function ProjectDetailsForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    if (onSubmit) {
+      onSubmit(formData);
+    }
+  };
+
+  const handleSelectChange = (value: string) => {
+    const updatedData = {
+      ...formData,
+      category: value,
+    };
+    setFormData(updatedData);
+
+    if (onChange) {
+      onChange(updatedData);
+    }
   };
 
   return (
@@ -123,12 +161,7 @@ export function ProjectDetailsForm({
           <Select
             name="category"
             value={formData.category}
-            onValueChange={(value) => {
-              setFormData((prev) => ({
-                ...prev,
-                category: value,
-              }));
-            }}
+            onValueChange={handleSelectChange}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a category" />
@@ -184,12 +217,16 @@ export function ProjectDetailsForm({
           </div>
         </div>
 
-        <div className="flex justify-between pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Back
-          </Button>
-          <Button type="submit">Next</Button>
-        </div>
+        {(onSubmit || onCancel) && (
+          <div className="flex justify-between pt-4">
+            {onCancel && (
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Back
+              </Button>
+            )}
+            {onSubmit && <Button type="submit">Next</Button>}
+          </div>
+        )}
       </form>
     </div>
   );

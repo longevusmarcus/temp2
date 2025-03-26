@@ -4,6 +4,7 @@ import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Label } from "./ui/label";
 import { Button } from "./ui/button";
 import { Check } from "lucide-react";
+import { BlockSize } from "@/lib/types";
 
 interface BlockSize {
   id: string;
@@ -17,12 +18,14 @@ interface BlockSizeSelectorProps {
   selectedSize?: string;
   onSizeSelect?: (size: string) => void;
   onContinue?: () => void;
+  onSelect?: (size: BlockSize) => void;
 }
 
 const BlockSizeSelector = ({
   selectedSize = "medium",
   onSizeSelect = () => {},
   onContinue = () => {},
+  onSelect,
 }: BlockSizeSelectorProps) => {
   const [selected, setSelected] = useState(selectedSize);
 
@@ -53,6 +56,9 @@ const BlockSizeSelector = ({
   const handleSizeChange = (value: string) => {
     setSelected(value);
     onSizeSelect(value);
+    if (onSelect) {
+      onSelect(value as BlockSize);
+    }
   };
 
   return (
