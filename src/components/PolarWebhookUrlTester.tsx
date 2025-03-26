@@ -96,7 +96,10 @@ export default function PolarWebhookUrlTester() {
         method: "OPTIONS",
         headers: {
           "Content-Type": "application/json",
+          Authorization: "Bearer test", // Add a test auth header to check if it's allowed
         },
+        // Add a timeout to prevent long hanging requests
+        signal: AbortSignal.timeout(10000),
       });
 
       // Get response headers
@@ -104,6 +107,13 @@ export default function PolarWebhookUrlTester() {
       optionsResponse.headers.forEach((value, key) => {
         headers[key] = value;
       });
+
+      // Check for CORS headers specifically
+      const corsHeadersPresent = {
+        allowOrigin: headers["access-control-allow-origin"] !== undefined,
+        allowMethods: headers["access-control-allow-methods"] !== undefined,
+        allowHeaders: headers["access-control-allow-headers"] !== undefined,
+      };
 
       // Try to get response text if possible
       let responseText = "";
@@ -119,6 +129,8 @@ export default function PolarWebhookUrlTester() {
         headers: {
           "Content-Type": "application/json",
         },
+        // Add a timeout to prevent long hanging requests
+        signal: AbortSignal.timeout(10000),
       });
 
       let getResponseText = "";
@@ -144,22 +156,50 @@ export default function PolarWebhookUrlTester() {
         headers,
         responseText: getResponseText || responseText,
         success: [200, 204, 405].includes(getResponse.status),
+        corsInfo: corsHeadersPresent,
       });
     } catch (error) {
       console.error("Error testing webhook URL:", error);
+
+      // Check if it's an abort error (timeout)
+      const isTimeout =
+        error.name === "TimeoutError" || error.name === "AbortError";
+
       setResult({
         status: 0,
-        message: `❌ Error: ${error.message}`,
-        error: error.message,
+        message: isTimeout
+          ? `❌ Error: Request timed out after 10 seconds`
+          : `❌ Error: ${error.message}`,
+        error: isTimeout
+          ? "Request timed out - The server might be slow to respond or not responding at all."
+          : error.message,
         success: false,
       });
 
       // Provide more detailed error information
       if (error.message.includes("Failed to fetch")) {
+        // Try to determine if it's a CORS issue or something else
+        const isSameOrigin = url.startsWith(window.location.origin);
+        const isLocalhost =
+          url.includes("localhost") || url.includes("127.0.0.1");
+        const isSupabaseUrl = url.includes(".supabase.co/");
+
+        let detailedError = "Failed to fetch - ";
+
+        if (!isSameOrigin && !isLocalhost) {
+          detailedError +=
+            "This is likely due to CORS restrictions. Supabase Edge Functions require proper CORS headers to be accessed from a browser.";
+        } else if (isSupabaseUrl) {
+          detailedError +=
+            "This could be because the function is not deployed, the URL is incorrect, or the Supabase project is not accessible.";
+        } else {
+          detailedError +=
+            "This could be due to network connectivity issues, the endpoint doesn't exist, or server-side errors.";
+        }
+
         setResult((prev) => ({
           ...prev,
-          error:
-            "Failed to fetch - This could be due to CORS restrictions, network connectivity issues, or the endpoint doesn't exist.",
+          error: detailedError,
         }));
       }
     } finally {
@@ -183,6 +223,7 @@ export default function PolarWebhookUrlTester() {
         method: "GET",
         mode: "no-cors",
         cache: "no-cache",
+        signal: AbortSignal.timeout(10000), // Add timeout
       });
 
       // With no-cors, we can't read the response, but we can check if the request succeeded
@@ -194,10 +235,93 @@ export default function PolarWebhookUrlTester() {
       });
     } catch (error) {
       console.error("Error testing webhook URL with no-cors:", error);
+
+      // Check if it's a timeout
+      const isTimeout =
+        error.name === "TimeoutError" || error.name === "AbortError";
+
       setResult({
         status: 0,
-        message: `❌ Error even with no-cors mode: ${error.message}`,
-        error: error.message,
+        message: isTimeout
+          ? `❌ Error: Request timed out after 10 seconds`
+          : `❌ Error even with no-cors mode: ${error.message}`,
+        error: isTimeout
+          ? "Request timed out - The server might be slow to respond or not responding at all."
+          : error.message,
+        success: false,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Test with a direct POST request (simulating a webhook call)
+  const testWithPost = async () => {
+    if (!url) return;
+
+    setLoading(true);
+    setResult((prev) => ({
+      ...prev,
+      message: "Testing with POST request...",
+    }));
+
+    try {
+      // Try a simple POST request with a minimal payload
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          test: true,
+          timestamp: new Date().toISOString(),
+        }),
+        signal: AbortSignal.timeout(10000), // Add timeout
+      });
+
+      // Get response headers
+      const headers: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+
+      // Try to get response text
+      let responseText = "";
+      try {
+        responseText = await response.text();
+      } catch (e) {
+        // Ignore errors when getting response text
+      }
+
+      setResult({
+        status: response.status,
+        message:
+          response.status >= 200 && response.status < 300
+            ? "✅ POST request successful! The webhook endpoint is working."
+            : response.status === 405
+              ? "❌ Method Not Allowed - The endpoint exists but doesn't accept POST requests (unusual for a webhook)"
+              : response.status === 404
+                ? "❌ Not found - The endpoint URL is incorrect or not deployed"
+                : `⚠️ POST request returned ${response.status} ${response.statusText}`,
+        headers,
+        responseText,
+        success: response.status >= 200 && response.status < 300,
+      });
+    } catch (error) {
+      console.error("Error testing webhook URL with POST:", error);
+
+      // Check if it's a timeout
+      const isTimeout =
+        error.name === "TimeoutError" || error.name === "AbortError";
+
+      setResult({
+        status: 0,
+        message: isTimeout
+          ? `❌ Error: POST request timed out after 10 seconds`
+          : `❌ Error with POST request: ${error.message}`,
+        error: isTimeout
+          ? "Request timed out - The server might be slow to respond or not responding at all."
+          : error.message,
         success: false,
       });
     } finally {
@@ -313,9 +437,68 @@ export default function PolarWebhookUrlTester() {
                           </li>
                         </ul>
                         <div className="mt-2">
-                          Try the "Test with no-cors mode" button below, which
-                          may bypass CORS restrictions.
+                          Try the "Test with no-cors mode" or "Test with POST"
+                          buttons below, which may help diagnose the issue.
                         </div>
+                      </div>
+                    )}
+
+                    {result.corsInfo && (
+                      <div className="mt-3">
+                        <div className="font-medium">CORS Headers Check:</div>
+                        <ul className="list-disc pl-5 space-y-1 text-xs mt-1">
+                          <li>
+                            Access-Control-Allow-Origin:{" "}
+                            {result.corsInfo.allowOrigin ? (
+                              <span className="text-green-400">Present</span>
+                            ) : (
+                              <span className="text-red-400">Missing</span>
+                            )}
+                          </li>
+                          <li>
+                            Access-Control-Allow-Methods:{" "}
+                            {result.corsInfo.allowMethods ? (
+                              <span className="text-green-400">Present</span>
+                            ) : (
+                              <span className="text-red-400">Missing</span>
+                            )}
+                          </li>
+                          <li>
+                            Access-Control-Allow-Headers:{" "}
+                            {result.corsInfo.allowHeaders ? (
+                              <span className="text-green-400">Present</span>
+                            ) : (
+                              <span className="text-red-400">Missing</span>
+                            )}
+                          </li>
+                        </ul>
+                        {(!result.corsInfo.allowOrigin ||
+                          !result.corsInfo.allowMethods ||
+                          !result.corsInfo.allowHeaders) && (
+                          <div className="mt-2 text-xs bg-yellow-900/30 p-2 rounded">
+                            Missing CORS headers detected. Your Supabase Edge
+                            Function needs to include proper CORS headers.
+                            <div className="mt-1 font-mono text-xs bg-gray-800 p-2 rounded">
+                              <div>
+                                // Example CORS headers for your Edge Function:
+                              </div>
+                              <div>const corsHeaders = &#123;</div>
+                              <div>
+                                &nbsp;&nbsp;'Access-Control-Allow-Origin': '*',
+                              </div>
+                              <div>
+                                &nbsp;&nbsp;'Access-Control-Allow-Headers':
+                                'authorization, x-client-info, apikey,
+                                content-type',
+                              </div>
+                              <div>
+                                &nbsp;&nbsp;'Access-Control-Allow-Methods':
+                                'GET, POST, OPTIONS',
+                              </div>
+                              <div>&#125;;</div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -358,28 +541,80 @@ export default function PolarWebhookUrlTester() {
             </li>
             <li>Verify that CORS headers are properly set in your function</li>
           </ul>
+
+          <div className="mt-4 p-3 bg-blue-900/30 border border-blue-800 rounded">
+            <div className="font-medium text-sm mb-1">
+              Common CORS Issues with Supabase Edge Functions:
+            </div>
+            <div className="text-xs text-gray-300">
+              <p className="mb-2">
+                If you're getting CORS errors, make sure your Edge Function
+                includes the following code:
+              </p>
+              <pre className="bg-gray-800 p-2 rounded overflow-x-auto text-xs">
+                {`// Handle OPTIONS request for CORS
+if (req.method === 'OPTIONS') {
+  return new Response('ok', {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    }
+  })
+}
+
+// Also add CORS headers to your actual response
+return new Response(JSON.stringify(data), {
+  headers: {
+    'Access-Control-Allow-Origin': '*',
+    'Content-Type': 'application/json'
+  }
+})`}
+              </pre>
+            </div>
+          </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between gap-2">
-        <Button
-          variant="outline"
-          onClick={testWithNoCors}
-          disabled={loading}
-          className="border-gray-700 text-gray-300 hover:bg-gray-800"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Testing...
-            </>
-          ) : (
-            "Test with no-cors mode"
-          )}
-        </Button>
+      <CardFooter className="flex flex-wrap justify-between gap-2">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={testWithNoCors}
+            disabled={loading}
+            className="border-gray-700 text-gray-300 hover:bg-gray-800"
+            title="Attempts to connect using no-cors mode, which may bypass some CORS restrictions but provides limited information"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Testing...
+              </>
+            ) : (
+              "Test with no-cors"
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={testWithPost}
+            disabled={loading}
+            className="border-gray-700 text-gray-300 hover:bg-gray-800"
+            title="Sends a POST request with a test payload, which is how webhooks are typically called"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Testing...
+              </>
+            ) : (
+              "Test with POST"
+            )}
+          </Button>
+        </div>
         <Button
           onClick={testUrl}
           disabled={loading || !networkStatus.online}
           className="bg-purple-600 hover:bg-purple-700"
+          title="Standard test that checks if the endpoint exists and has proper CORS headers"
         >
           {loading ? (
             <>
