@@ -9,7 +9,7 @@ import {
   Loader2,
   Database,
 } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase-client-fixed";
 
 export default function DatabasePermissionFixer() {
   const [loading, setLoading] = useState(false);
@@ -24,21 +24,9 @@ export default function DatabasePermissionFixer() {
     setResult(null);
 
     try {
-      // Create a direct client with environment variables or hardcoded credentials as fallback
-      const supabaseUrl =
-        import.meta.env.VITE_SUPABASE_URL ||
-        "https://mbqihswchccmvqmjlpwq.supabase.co";
-      const supabaseKey =
-        import.meta.env.VITE_SUPABASE_ANON_KEY ||
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icWloc3djaGNjbXZxbWpscHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTM0MzY4MDAsImV4cCI6MjAwOTAxMjgwMH0.qmO3KXHzgZZM_pVlnEqjwfXZUlSXYtXfTj7yfzwmHUo";
-
-      console.log("DatabasePermissionFixer using URL:", supabaseUrl);
       console.log(
-        "DatabasePermissionFixer using Key (first 10 chars):",
-        supabaseKey.substring(0, 10) + "...",
+        "DatabasePermissionFixer using direct supabase client with service role key",
       );
-
-      const supabase = createClient(supabaseUrl, supabaseKey);
 
       // Test if we can query the webhook_logs table
       const { data: logsData, error: logsError } = await supabase

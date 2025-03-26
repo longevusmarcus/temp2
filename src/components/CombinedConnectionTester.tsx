@@ -12,7 +12,7 @@ import {
   Key,
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase-client-fixed";
 
 export default function CombinedConnectionTester() {
   const [loading, setLoading] = useState(false);
