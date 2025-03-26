@@ -74,38 +74,31 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ isFetchingStats: true });
     console.log("Starting to fetch stats from Supabase...");
     try {
-      // Get total projects count
-      const { count: projectCount, error: projectError } = await supabase
+      // First, try to fetch all projects to see if we can access the data
+      const { data: allProjects, error: allProjectsError } = await supabase
         .from("projects")
-        .select("*", { count: "exact", head: true });
+        .select("*");
 
-      if (projectError) {
-        console.error("Error fetching project count:", projectError);
-        throw projectError;
+      if (allProjectsError) {
+        console.error("Error fetching all projects:", allProjectsError);
+        throw allProjectsError;
       }
 
-      console.log("Project count:", projectCount);
+      console.log("All projects data:", allProjects);
 
-      // Get sum of all pixel areas
-      const { data: pixelData, error: pixelError } = await supabase
-        .from("projects")
-        .select("width, height");
+      // If we can get the data, use it directly instead of count
+      const projectCount = allProjects.length;
+      console.log("Project count from data:", projectCount);
 
-      if (pixelError) {
-        console.error("Error fetching pixel data:", pixelError);
-        throw pixelError;
-      }
-
-      console.log("Pixel data:", pixelData);
-
-      // Calculate total pixels manually
-      const purchasedPixels = pixelData
-        ? pixelData.reduce((sum, item) => sum + item.width * item.height, 0)
-        : 0;
+      // Calculate total pixels manually from the data we already have
+      const purchasedPixels = allProjects.reduce(
+        (sum, item) => sum + item.width * item.height,
+        0,
+      );
       const totalPixels = 1000000; // 1000x1000 grid
       const availablePixels = totalPixels - purchasedPixels;
 
-      console.log("Fetched real stats from Supabase:", {
+      console.log("Calculated stats from fetched data:", {
         totalProjects: projectCount,
         purchasedPixels,
         availablePixels,
@@ -113,15 +106,30 @@ export const useStore = create<StoreState>((set, get) => ({
       });
 
       set({
-        totalProjects: projectCount || 0,
+        totalProjects: projectCount,
         purchasedPixels,
         availablePixels,
         totalPixels,
         isFetchingStats: false,
+        // Also update the pixel blocks directly since we already have the data
+        pixelBlocks: allProjects.map((item) => ({
+          id: item.id,
+          projectName: item.project_name,
+          developerName: item.developer_name,
+          description: item.description,
+          websiteUrl: item.website_url,
+          thumbnailUrl: item.thumbnail_url || "",
+          thumbnail_url: item.thumbnail_url || "",
+          x: item.x,
+          y: item.y,
+          width: item.width,
+          height: item.height,
+          color: item.color || "#6d28d9",
+          category: item.category || "Other",
+          email: item.email || "",
+        })),
+        isLoading: false,
       });
-
-      // After updating stats, fetch the blocks
-      get().fetchPixelBlocks();
     } catch (error) {
       console.error("Error fetching stats:", error);
       set({ isFetchingStats: false });
