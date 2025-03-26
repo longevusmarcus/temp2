@@ -52,9 +52,18 @@ console.log("Environment variables check:", {
     : "Not found",
 });
 
-// Create Supabase client with credentials
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-console.log("Supabase client created successfully");
+// Create Supabase client with credentials - with fallback for missing key
+const supabase =
+  supabaseUrl && supabaseServiceKey
+    ? createClient(supabaseUrl, supabaseServiceKey)
+    : null;
+
+// Log whether client was created successfully
+if (supabase) {
+  console.log("Supabase client created successfully");
+} else {
+  console.log("Failed to create Supabase client - missing URL or service key");
+}
 
 const webhooks = new Webhooks({ secret: WEBHOOK_SECRET });
 
@@ -120,16 +129,22 @@ Deno.serve(async (req) => {
 
       // Log the webhook event
       try {
-        const { data, error } = await supabase.from("webhook_logs").insert({
-          event_type: payload.type,
-          payload,
-          status: "received",
-        });
+        if (supabase) {
+          const { data, error } = await supabase.from("webhook_logs").insert({
+            event_type: payload.type,
+            payload,
+            status: "received",
+          });
 
-        if (error) {
-          console.error("Error logging webhook:", error);
+          if (error) {
+            console.error("Error logging webhook:", error);
+          } else {
+            console.log("Webhook logged successfully");
+          }
         } else {
-          console.log("Webhook logged successfully");
+          console.log(
+            "Skipping database logging - Supabase client not available",
+          );
         }
       } catch (dbError) {
         console.error("Database error logging webhook:", dbError);
